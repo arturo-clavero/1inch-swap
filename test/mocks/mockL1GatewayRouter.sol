@@ -15,13 +15,7 @@ contract MockL1GatewayRouter is IL1GatewayRouter {
         return returnedL2Address;
     }
 
-    function depositERC20(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external payable override {
+    function depositERC20(address, address, uint256, uint256, bytes calldata) external payable override {
         // nothing: simulate success
     }
 }

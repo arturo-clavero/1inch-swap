@@ -15,13 +15,7 @@ contract MockL2GatewayRouter is IL2GatewayRouter {
         return returnedL2Address;
     }
 
-    function withdrawERC20(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external payable override {
+    function withdrawERC20(address, address, uint256, uint256, bytes calldata) external payable override {
         // nothing: simulate success
     }
 }
