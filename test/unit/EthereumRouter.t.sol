@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import {Test} from "forge-std/Test.sol";
-import "../src/EthereumRouter.sol";
-import "./mocks/mockERC20.sol";
-import "./mocks/mockL1GatewayRouter.sol";
+import "../../src/EthereumRouter.sol";
+import "../mocks/mockERC20.sol";
+import "../mocks/mockL1GatewayRouter.sol";
 
 contract EthereumRouterTest is Test {
     EthereumRouter public router;
