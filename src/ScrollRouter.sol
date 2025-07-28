@@ -10,7 +10,7 @@ contract ScrollRouter is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     error tokenNotMapped();
-    error DoubleOrder();
+    error InvalidOrder();
 
     event BridgeStarted(uint256 indexed orderId);
     event BridgeFinished(uint256 indexed orderId);
@@ -34,8 +34,8 @@ contract ScrollRouter is ReentrancyGuard {
     function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
         address l2GatewayRouterAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
 
-        if (orders[orderId] != 0) {
-            revert DoubleOrder();
+        if (orders[orderId] != 0) {//TODO change to _stateVerified after verification order
+            revert InvalidOrder();
         }
 
         //receive tokens

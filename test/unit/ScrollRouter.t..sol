@@ -15,6 +15,8 @@ contract ScrollRouterTest is Test {
     address public gatewayAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
     address public mockL1Token = address(0xC0FFEE);
 
+	event BridgeStarted(uint256 indexed orderId);
+
     uint256 orderId = 1;
 
     function setUp() public {
@@ -94,4 +96,16 @@ contract ScrollRouterTest is Test {
         vm.expectRevert();
         router.bridgeStart{value: 0.01 ether}(1 ether, address(badToken), orderId);
     }
+
+	function testBridgeStartEmitsEvent() public {
+		vm.startPrank(user);
+
+		vm.expectEmit(true, false, false, false);
+		emit BridgeStarted(orderId);
+
+		router.bridgeStart{value: 0.01 ether}(100 ether, address(token), orderId);
+
+		vm.stopPrank();
+	}
+
 }

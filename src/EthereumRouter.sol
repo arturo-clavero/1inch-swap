@@ -10,7 +10,7 @@ contract EthereumRouter is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     error tokenNotMapped();
-    error DoubleOrder();
+    error InvalidOrder();
 
     event BridgeStarted(uint256 indexed orderId);
     event BridgeFinished(uint256 indexed orderId);
@@ -34,8 +34,8 @@ contract EthereumRouter is ReentrancyGuard {
     function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
         address l1GatewayRouterAddress = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6;
 
-        if (orders[orderId] != 0) {
-            revert DoubleOrder();
+        if (orders[orderId] != 0) {//TODO change to _stateVerified after verification order
+            revert InvalidOrder();
         }
 
         //receive tokens

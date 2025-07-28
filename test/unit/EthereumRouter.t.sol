@@ -15,6 +15,8 @@ contract EthereumRouterTest is Test {
     address public gatewayAddress = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6;
     address public mockL2Token = address(0xC0FFEE);
 
+	event BridgeStarted(uint256 indexed orderId);
+
     uint256 orderId = 1;
 
     function setUp() public {
@@ -94,4 +96,16 @@ contract EthereumRouterTest is Test {
         vm.expectRevert();
         router.bridgeStart{value: 0.01 ether}(1 ether, address(badToken), orderId);
     }
+
+	function testBridgeStartEmitsEvent() public {
+		vm.startPrank(user);
+
+		vm.expectEmit(true, false, false, false);
+		emit BridgeStarted(orderId);
+
+		router.bridgeStart{value: 0.01 ether}(100 ether, address(token), orderId);
+
+		vm.stopPrank();
+	}
+
 }
