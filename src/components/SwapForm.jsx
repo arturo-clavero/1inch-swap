@@ -26,9 +26,11 @@ const SwapForm = ({
       setIsLoading(false);
     }
   }, [connected, amount, oldCurrency, newCurrency, walletAddress]);
-
+  const [isSwapping, setIsSwapping] = useState(false); 
   const handleSwap = async () => {
+    if (isSwapping) return ;
     try {
+      setIsSwapping(true);
       const response = await axios.post('http://localhost:3000/api/generate');
       const hash = response.data.hash;
       console.log("from backend hash is", hash);
@@ -45,8 +47,11 @@ const SwapForm = ({
     } catch (error) {
       console.error("error generating secret", error);
       alert('failed to start swap');
+      alert(`Pretending to swap ${amount} ETH for USDC!`);
     }
-    alert(`Pretending to swap ${amount} ETH for USDC!`);
+    finally{
+      setIsSwapping(false);
+    }
   };
 
   return (

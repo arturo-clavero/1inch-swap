@@ -7,7 +7,7 @@ import './App.css';
 
 function App() {
   const [oldCurrency, setOldCurrency] = useState('ETH');
-  const [newCurrency, setNewCurrency] = useState('USDC');
+  const [newCurrency, setNewCurrency] = useState('SCROLL');
   const [amount, setAmount] = useState('');
   const [convertedPrice, setConvertedPrice] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');

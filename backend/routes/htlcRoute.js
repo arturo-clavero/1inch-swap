@@ -28,7 +28,7 @@ router.post('/lock', async (req, res) =>{
         res.json({ status: "locked", txnHash: txn.hash})
     } catch (err){
         console.error(err);
-        res.status(500).json({error: "Lock failed", details: err.message});
+        return res.status(500).json({error: "Lock failed", details: err.message});
     }
     //use the secret and private wallet to lock tokens in the htlc
 });
