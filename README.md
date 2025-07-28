@@ -28,6 +28,12 @@ A minimal frontend interface to swap ETH for USDC using on-chain price data from
 
    ```env
    PORT=3000
+   ETH_CONTRACT_ADDRESS=0xCFcaC62C31821bB88582936A767C21688D60B603
+   SCROLL_CONTRACT_ADDRESS=0x8Ad9d5e721b839c66684aA2fB7e014481859b151
+   PRIVATE_KEY=your_wallet_private_key
+   ##for test CHANGE LATER
+   ETH_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/gEJiAZLcZKDjZQBd9LOsS"
+   SCROLL_RPC_URL="https://sepolia-rpc.scroll.io/"
    ```
 
 3. **Start the backend server**:
