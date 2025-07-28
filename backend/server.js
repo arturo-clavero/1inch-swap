@@ -18,4 +18,6 @@ const port = process.env.PORT;
 app.listen(port, () => {
     console.log(`Node.js HTTP server is running on port ${port}`);
     console.log(`http://localhost:3000`)
+
 });
+//listening for the contract's events (withdrawn and refunded)

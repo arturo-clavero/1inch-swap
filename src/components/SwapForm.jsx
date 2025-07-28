@@ -27,16 +27,21 @@ const SwapForm = ({
     }
   }, [connected, amount, oldCurrency, newCurrency, walletAddress]);
 
-//   const handleSwap = () => {
-//     alert(`Pretending to swap ${amount} ${oldCurrency} for ${newCurrency}!`);
-//   };
   const handleSwap = async () => {
     try {
-      const response = await axios.post('http://localhost:3000/api/generate')
-      console.log("the response is ", response);
+      const response = await axios.post('http://localhost:3000/api/generate');
       const hash = response.data.hash;
       console.log("from backend hash is", hash);
-      //contract htlc
+
+      const lock = await axios.post('http://localhost:3000/api/lock', {
+        receiver: walletAddress,
+        hashlock: hash,
+        timelock: 60 * 5,
+        amount: "0.00001", //eth
+        chain: oldCurrency.toLowerCase()
+      });
+      console.log("Lock transaction:", lock.data.txnHash);
+      alert("Swap was simulated successfully");
     } catch (error) {
       console.error("error generating secret", error);
       alert('failed to start swap');
