@@ -1,24 +1,42 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/IL2GatewayRouter.sol";
 
 //deployed on scroll!
-contract ScrollRouter {
+contract ScrollRouter is ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     error tokenNotMapped();
+    error DoubleOrder();
 
     event BridgeStarted(uint256 indexed orderId);
     event BridgeFinished(uint256 indexed orderId);
+
+    uint256 constant _stateFinished = 0;
+    uint256 constant _stateVerified = 1;
+    uint256 constant _statePending = 2;
+    uint256 constant _stateCancelled = 3;
+
+    mapping(uint256 => uint256) private orders;
 
     function verifyOrder() private pure returns (bool) {
         //TODO
         return true;
     }
 
-    //dst token address the address recipient ? To revise
-    function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable {
+    function updateOrder(uint256 orderId, uint256 state) private {
+        orders[orderId] = state;
+    }
+
+    function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
         address l2GatewayRouterAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
+
+        if (orders[orderId] != 0) {
+            revert DoubleOrder();
+        }
 
         //receive tokens
         IERC20(srcTokenAddress).transferFrom(msg.sender, address(this), amount);
@@ -43,5 +61,7 @@ contract ScrollRouter {
 
         //send event notfication
         emit BridgeStarted(orderId);
+
+        updateOrder(orderId, _statePending);
     }
 }
