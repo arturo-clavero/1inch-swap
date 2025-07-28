@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { fetchQuote } from '../hooks/useQuoteFetcher';
-import axios from "axios";
 
 const SwapForm = ({
   connected, walletAddress, oldCurrency, newCurrency,
@@ -27,21 +26,8 @@ const SwapForm = ({
     }
   }, [connected, amount, oldCurrency, newCurrency, walletAddress]);
 
-//   const handleSwap = () => {
-//     alert(`Pretending to swap ${amount} ${oldCurrency} for ${newCurrency}!`);
-//   };
-  const handleSwap = async () => {
-    try {
-      const response = await axios.post('http://localhost:3000/api/generate')
-      console.log("the response is ", response);
-      const hash = response.data.hash;
-      console.log("from backend hash is", hash);
-      //contract htlc
-    } catch (error) {
-      console.error("error generating secret", error);
-      alert('failed to start swap');
-    }
-    alert(`Pretending to swap ${amount} ETH for USDC!`);
+  const handleSwap = () => {
+    alert(`Pretending to swap ${amount} ${oldCurrency} for ${newCurrency}!`);
   };
 
   return (
