@@ -12,9 +12,6 @@ contract ScrollRouter is ReentrancyGuard {
     error tokenNotMapped();
     error InvalidOrder();
 
-    event BridgeStarted(uint256 indexed orderId);
-    event BridgeFinished(uint256 indexed orderId);
-
     uint256 constant _stateFinished = 0;
     uint256 constant _stateVerified = 1;
     uint256 constant _statePending = 2;
@@ -34,7 +31,8 @@ contract ScrollRouter is ReentrancyGuard {
     function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
         address l2GatewayRouterAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
 
-        if (orders[orderId] != 0) {//TODO change to _stateVerified after verification order
+        if (orders[orderId] != 0) {
+            //TODO change to _stateVerified after verification order
             revert InvalidOrder();
         }
 
@@ -58,9 +56,6 @@ contract ScrollRouter is ReentrancyGuard {
             200_000,
             "0x" // Optional calldata
         );
-
-        //send event notfication
-        emit BridgeStarted(orderId);
 
         updateOrder(orderId, _statePending);
     }
