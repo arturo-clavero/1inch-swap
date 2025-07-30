@@ -20,7 +20,7 @@ contract ScrollRouter is ReentrancyGuard {
 
     event BridgeStarted(uint256 indexed orderId);
     event BridgeFinished(uint256 indexed orderId);
-    event OrderCreated(uint256 indexed orderId, address indexed maker); //still have to implement createOrder()
+    event OrderCreated(uint256 indexed orderId, address indexed maker);
 
     uint256 constant _stateFinished = 0;
     uint256 constant _stateVerified = 1;
@@ -29,6 +29,56 @@ contract ScrollRouter is ReentrancyGuard {
 
     mapping(uint256 => uint256) private orders;
     mapping(uint256 => IFusionOrder.Order) private orderDetails; // added
+
+    function createOrder(
+        address sourceToken,
+        uint256 sourceAmount,
+        address destinationToken,
+        uint256 minReturnAmount,
+        uint32 destinationChainId,
+        uint256 expirationTimestamp,
+        bytes calldata signature
+    ) external returns (uint256) {
+        //Generate order ID (hash of parameters + nonce)
+        uint256 orderId = uint256(keccak256(abi.encodePacked(
+            msg.sender,
+            sourceToken,
+            sourceAmount,
+            destinationToken,
+            minReturnAmount,
+            block.chainid,
+            destinationChainId,
+            expirationTimestamp,
+            block.timestamp
+        )));
+        if (orders[orderId] != 0) {
+            revert DoubleOrder();
+        }
+
+    //Create and store order
+    IFusionOrder.Order memory order = IFusionOrder.Order({
+        orderId: orderId,
+        maker: msg.sender,
+        sourceToken: sourceToken,
+        sourceAmount: sourceAmount,
+        destinationToken: destinationToken,
+        minReturnAmount: minReturnAmount,
+        sourceChainId: uint32(block.chainid),
+        destinationChainId: destinationChainId,
+        expirationTimestamp: expirationTimestamp,
+        signature: signature
+    });
+
+    //Store order
+    orderDetails[orderId] = order;
+    //Set initial state
+    orders[orderId] = _statePending;
+    //Emit event
+    emit OrderCreated(orderId, msg.sender);
+
+    return orderId;
+    }
+
 
     function verifyOrder(IFusionOrder.Order memory order) private view returns (bool) {
         //check for order expiration

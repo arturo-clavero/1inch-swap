@@ -8,9 +8,11 @@ interface IFusionOrder {
         address sourceToken;
         uint256 sourceAmount;
         address destinationToken;
-        uint256 minReturnAmount;
         uint32 sourceChainId;
         uint32 destinationChainId;
+        uint256 startReturnAmount;
+        uint256 startTimestamp;
+        uint256 minReturnAmount;
         uint256 expirationTimestamp;
         bytes signature;
     }
