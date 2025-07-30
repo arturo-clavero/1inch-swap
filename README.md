@@ -116,7 +116,18 @@ Before submitting a PR, please ensure:
 ## 🛠 Example `.env`
 
 ```env
+PORT=3000
 VITE_1INCH_API_KEY=your_actual_api_key
+ETH_CONTRACT_ADDRESS=0xCFcaC62C31821bB88582936A767C21688D60B603
+SCROLL_CONTRACT_ADDRESS=0x8Ad9d5e721b839c66684aA2fB7e014481859b151
+PRIVATE_KEY="Your_wallet_Private_Key"
+ETH_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/You_API_KEY"
+SCROLL_RPC_URL="https://sepolia-rpc.scroll.io/"
+ETH_WC_URL="wss://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY"
+SCROLL_WC_URL="wss://scroll-sepolia.gateway.tenderly.co/API_GATEWAY"
+RELAYER_ADDRESS="0x75AE055963B893aDEC72eB14B85570C39a4d62BB"
+VITE_ETH_CONTRACT_ADDRESS=0xCFcaC62C31821bB88582936A767C21688D60B603
+VITE_SCROLL_CONTRACT_ADDRESS=0x8Ad9d5e721b839c66684aA2fB7e014481859b151
 ```
 
 Access it in your code via:
