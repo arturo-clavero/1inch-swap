@@ -17,6 +17,7 @@ contract ScrollRouter is ReentrancyGuard {
     error OrderExpired();
     error InsufficientBalance();
     error InsufficientAllowance();
+    error InvalidTimestamp();
 
     event BridgeStarted(uint256 indexed orderId);
     event BridgeFinished(uint256 indexed orderId);
@@ -41,6 +42,13 @@ contract ScrollRouter is ReentrancyGuard {
         uint256 expirationTimestamp,
         bytes calldata signature
     ) external returns (uint256) {
+        // Check timestamp
+        if (expirationTimestamp <= block.timestamp) {
+            revert OrderExpired();
+        }
+        if (startTimestamp >= expirationTimestamp) {
+            revert InvalidTimestamp();
+        }
         //Generate order ID (hash of parameters + nonce)
         uint256 orderId = uint256(keccak256(abi.encodePacked(
             msg.sender,

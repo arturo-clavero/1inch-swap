@@ -2,24 +2,24 @@
 pragma solidity ^0.8.13;
 
 import {Test} from "forge-std/Test.sol";
-import "../../src/EthereumRouter.sol";
+import "../../src/ScrollRouter.sol";
 import "../mocks/mockERC20.sol";
-import "../mocks/mockL1GatewayRouter.sol";
+import "../mocks/mockL2GatewayRouter.sol";
 import "../../src/interfaces/IFusionOrder.sol";
 
-contract EthereumRouterTest is Test {
-    EthereumRouter public router;
+contract ScrollRouterTest is Test {
+    ScrollRouter public router;
     MockERC20 public sourceToken;
     MockERC20 public destinationToken;
-    MockL1GatewayRouter public gateway;
+    MockL2GatewayRouter public gateway;
 
     address public user = address(0xBEEF);
-    address public gatewayAddress = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6;
-    address public mockL2Token = address(0xC0FFEE);
+    address public gatewayAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
+    address public mockL1Token = address(0xC0FFEE);
 
     // Test parameters for order creation
     uint256 sourceAmount = 100 ether;
-    uint32 destinationChainId = 534352; // Scroll chainId
+    uint32 destinationChainId = 1; // Ethereum chainId
     uint256 startReturnAmount = 98 ether;
     uint256 minReturnAmount = 95 ether;
     uint256 expirationTimestamp;
@@ -33,8 +33,8 @@ contract EthereumRouterTest is Test {
         // Deploy contracts
         sourceToken = new MockERC20();
         destinationToken = new MockERC20();
-        gateway = new MockL1GatewayRouter(mockL2Token);
-        router = new EthereumRouter();
+        gateway = new MockL2GatewayRouter(mockL1Token);
+        router = new ScrollRouter();
 
         // Label for debugging
         vm.label(address(sourceToken), "SourceToken");
@@ -272,7 +272,7 @@ contract EthereumRouterTest is Test {
         );
         
         // This should revert with OrderExpired
-        vm.expectRevert(EthereumRouter.OrderExpired.selector);
+        vm.expectRevert(ScrollRouter.OrderExpired.selector);
         router.createOrder(
             address(sourceToken),
             sourceAmount,
@@ -327,6 +327,79 @@ contract EthereumRouterTest is Test {
             _startTimestamp,
             _minReturnAmount,
             _expirationTimestamp
+        ));
+        
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+        
+        // Sign the message hash
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(PRIVATE_KEY, ethSignedMessageHash);
+        
+        // Pack signature
+        return abi.encodePacked(r, s, v);
+    }
+
+    // Test Dutch auction edge cases
+    function testDutchAuctionEdgeCases() public {
+        vm.startPrank(user);
+        
+        // Create order with very small auction window
+        uint256 shortStartTimestamp = block.timestamp + 1 minutes;
+        uint256 shortExpirationTimestamp = shortStartTimestamp + 5 minutes;
+        
+        // Create signature for short auction
+        bytes memory shortAuctionSignature = createShortAuctionSignature(shortStartTimestamp, shortExpirationTimestamp);
+        
+        uint256 orderId = router.createOrder(
+            address(sourceToken),
+            sourceAmount,
+            address(destinationToken),
+            destinationChainId,
+            startReturnAmount,
+            shortStartTimestamp,
+            minReturnAmount,
+            shortExpirationTimestamp,
+            shortAuctionSignature
+        );
+        
+        // Test at exactly the start time
+        vm.warp(shortStartTimestamp);
+        assertEq(router.getCurrentReturnAmount(orderId), startReturnAmount, "Return amount should be startReturnAmount at auction start");
+        
+        // Test at exactly the end time
+        vm.warp(shortExpirationTimestamp);
+        assertEq(router.getCurrentReturnAmount(orderId), minReturnAmount, "Return amount should be minReturnAmount at auction end");
+        
+        vm.stopPrank();
+    }
+
+    function createShortAuctionSignature(uint256 shortStartTimestamp, uint256 shortExpirationTimestamp) internal returns (bytes memory) {
+        // Generate a deterministic orderId for signature
+        uint256 orderId = uint256(keccak256(abi.encodePacked(
+            address(sourceToken),
+            sourceAmount,
+            address(destinationToken),
+            block.chainid,
+            destinationChainId,
+            startReturnAmount,
+            shortStartTimestamp,
+            minReturnAmount,
+            shortExpirationTimestamp,
+            block.timestamp
+        )));
+
+        // Create message hash
+        bytes32 messageHash = keccak256(abi.encodePacked(
+            orderId,
+            user,
+            address(sourceToken),
+            sourceAmount,
+            address(destinationToken),
+            block.chainid,
+            destinationChainId,
+            startReturnAmount,
+            shortStartTimestamp,
+            minReturnAmount,
+            shortExpirationTimestamp
         ));
         
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
