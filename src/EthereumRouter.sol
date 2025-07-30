@@ -160,38 +160,63 @@ contract EthereumRouter is ReentrancyGuard {
         orders[orderId] = state;
     }
 
-    //bridgeStart() to implement with the new order struct (using orderId)
-    function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
-        address l1GatewayRouterAddress = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6;
-
-        if (orders[orderId] != 0) {
-            revert DoubleOrder();
+    //Dutch auction implementation
+    function getCurrentReturnAmount(uint256 orderId) public view returns (uint256) {
+        IFusionOrder.Order memory order = orderDetails[orderId];
+        
+        // If auction hasn't started yet
+        if (block.timestamp < order.startTimestamp) {
+            return order.startReturnAmount;
         }
-
-        //receive tokens
-        IERC20(srcTokenAddress).transferFrom(msg.sender, address(this), amount);
-
-        //approve token transfer
-        IERC20(srcTokenAddress).approve(l1GatewayRouterAddress, amount);
-
-        //get L2 token address
-        address dstTokenAddress = IL1GatewayRouter(l1GatewayRouterAddress).getL2ERC20Address(srcTokenAddress);
-        if (dstTokenAddress == address(0)) {
-            revert tokenNotMapped();
+        
+        // If auction has ended
+        if (block.timestamp >= order.expirationTimestamp) {
+            return order.minReturnAmount;
         }
-
-        //send ERC20
-        IL1GatewayRouter(l1GatewayRouterAddress).depositERC20{value: msg.value}(
-            srcTokenAddress,
-            dstTokenAddress,
-            amount,
-            200_000,
-            "0x" // Optional calldata
-        );
-
-        //send event notfication
-        emit BridgeStarted(orderId);
-
-        updateOrder(orderId, _statePending);
+        
+        // Calculate current return amount based on elapsed time
+        uint256 elapsed = block.timestamp - order.startTimestamp;
+        uint256 totalDuration = order.expirationTimestamp - order.startTimestamp;
+        uint256 amountRange = order.startReturnAmount - order.minReturnAmount;
+        uint256 reduction = (amountRange * elapsed) / totalDuration;
+        
+        return order.startReturnAmount - reduction;
     }
 }
+
+
+//     //bridgeStart() to implement with the new order struct (using orderId)
+//     function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
+//         address l1GatewayRouterAddress = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6;
+
+//         if (orders[orderId] != 0) {
+//             revert DoubleOrder();
+//         }
+
+//         //receive tokens
+//         IERC20(srcTokenAddress).transferFrom(msg.sender, address(this), amount);
+
+//         //approve token transfer
+//         IERC20(srcTokenAddress).approve(l1GatewayRouterAddress, amount);
+
+//         //get L2 token address
+//         address dstTokenAddress = IL1GatewayRouter(l1GatewayRouterAddress).getL2ERC20Address(srcTokenAddress);
+//         if (dstTokenAddress == address(0)) {
+//             revert tokenNotMapped();
+//         }
+
+//         //send ERC20
+//         IL1GatewayRouter(l1GatewayRouterAddress).depositERC20{value: msg.value}(
+//             srcTokenAddress,
+//             dstTokenAddress,
+//             amount,
+//             200_000,
+//             "0x" // Optional calldata
+//         );
+
+//         //send event notfication
+//         emit BridgeStarted(orderId);
+
+//         updateOrder(orderId, _statePending);
+//     }
+// }

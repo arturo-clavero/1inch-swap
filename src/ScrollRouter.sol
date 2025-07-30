@@ -34,8 +34,10 @@ contract ScrollRouter is ReentrancyGuard {
         address sourceToken,
         uint256 sourceAmount,
         address destinationToken,
-        uint256 minReturnAmount,
         uint32 destinationChainId,
+        uint256 startReturnAmount,
+        uint256 startTimestamp,
+        uint256 minReturnAmount,
         uint256 expirationTimestamp,
         bytes calldata signature
     ) external returns (uint256) {
@@ -45,9 +47,11 @@ contract ScrollRouter is ReentrancyGuard {
             sourceToken,
             sourceAmount,
             destinationToken,
-            minReturnAmount,
             block.chainid,
             destinationChainId,
+            startReturnAmount, //Starting price of dutch auction
+            startTimestamp, //Starting time of dutch auction
+            minReturnAmount, //Minimum ending price of dutch auction
             expirationTimestamp,
             block.timestamp
         )));
@@ -62,9 +66,11 @@ contract ScrollRouter is ReentrancyGuard {
         sourceToken: sourceToken,
         sourceAmount: sourceAmount,
         destinationToken: destinationToken,
-        minReturnAmount: minReturnAmount,
         sourceChainId: uint32(block.chainid),
         destinationChainId: destinationChainId,
+        startReturnAmount: startReturnAmount,
+        startTimestamp: startTimestamp,
+        minReturnAmount: minReturnAmount,
         expirationTimestamp: expirationTimestamp,
         signature: signature
     });
@@ -98,6 +104,10 @@ contract ScrollRouter is ReentrancyGuard {
         if (IERC20(order.sourceToken).allowance(order.maker, address(this)) < order.sourceAmount) {
             revert InsufficientAllowance();
         }
+        //check for timestamp
+        if (order.startTimestamp >= order.expirationTimestamp) {
+            revert OrderExpired();
+        }
         return true;
     }
 
@@ -110,12 +120,14 @@ contract ScrollRouter is ReentrancyGuard {
                 order.sourceToken,
                 order.sourceAmount,
                 order.destinationToken,
-                order.minReturnAmount,
                 order.sourceChainId,
                 order.destinationChainId,
+                order.startReturnAmount,
+                order.startTimestamp,
+                order.minReturnAmount,
                 order.expirationTimestamp
             )
-        );
+        ); //In front end we need to pass the parameters in this exact order
         
         // Convert to Ethereum signed message hash
         bytes32 ethSignedMessageHash = keccak256(
@@ -149,33 +161,56 @@ contract ScrollRouter is ReentrancyGuard {
         orders[orderId] = state;
     }
 
-    //dst token address the address recipient ? To revise 
-    //bridgeStart() to implement with the new order struct (using orderId)
-    function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable {
-        address l2GatewayRouterAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
-
-        //receive tokens
-        IERC20(srcTokenAddress).transferFrom(msg.sender, address(this), amount);
-
-        //approve token transfer
-        IERC20(srcTokenAddress).approve(l2GatewayRouterAddress, amount);
-
-        //get L2 token address
-        address dstTokenAddress = IL2GatewayRouter(l2GatewayRouterAddress).getL1ERC20Address(srcTokenAddress);
-        if (dstTokenAddress == address(0)) {
-            revert tokenNotMapped();
+    //Dutch auction implementation
+    function getCurrentReturnAmount(uint256 orderId) public view returns (uint256) {
+        IFusionOrder.Order memory order = orderDetails[orderId];
+        
+        // If auction hasn't started yet
+        if (block.timestamp < order.startTimestamp) {
+            return order.startReturnAmount;
         }
-
-        //send ERC20
-        IL2GatewayRouter(l2GatewayRouterAddress).withdrawERC20{value: msg.value}(
-            srcTokenAddress,
-            dstTokenAddress,
-            amount,
-            200_000,
-            "0x" // Optional calldata
-        );
-
-        //send event notfication
-        emit BridgeStarted(orderId);
+        
+        // If auction has ended
+        if (block.timestamp >= order.expirationTimestamp) {
+            return order.minReturnAmount;
+        }
+        
+        // Calculate current return amount based on elapsed time
+        uint256 elapsed = block.timestamp - order.startTimestamp;
+        uint256 totalDuration = order.expirationTimestamp - order.startTimestamp;
+        uint256 amountRange = order.startReturnAmount - order.minReturnAmount;
+        uint256 reduction = (amountRange * elapsed) / totalDuration;
+        
+        return order.startReturnAmount - reduction;
     }
 }
+    // //dst token address the address recipient ? To revise 
+    // //bridgeStart() to implement with the new order struct (using orderId)
+    // function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable {
+    //     address l2GatewayRouterAddress = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79;
+
+    //     //receive tokens
+    //     IERC20(srcTokenAddress).transferFrom(msg.sender, address(this), amount);
+
+    //     //approve token transfer
+    //     IERC20(srcTokenAddress).approve(l2GatewayRouterAddress, amount);
+
+    //     //get L2 token address
+    //     address dstTokenAddress = IL2GatewayRouter(l2GatewayRouterAddress).getL1ERC20Address(srcTokenAddress);
+    //     if (dstTokenAddress == address(0)) {
+    //         revert tokenNotMapped();
+    //     }
+
+    //     //send ERC20
+    //     IL2GatewayRouter(l2GatewayRouterAddress).withdrawERC20{value: msg.value}(
+    //         srcTokenAddress,
+    //         dstTokenAddress,
+    //         amount,
+    //         200_000,
+    //         "0x" // Optional calldata
+    //     );
+
+    //     //send event notfication
+    //     emit BridgeStarted(orderId);
+    // }
+// }
