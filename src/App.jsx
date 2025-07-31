@@ -6,17 +6,22 @@ import SwapForm from './components/SwapForm';
 import './App.css';
 
 function App() {
-  const [oldCurrency, setOldCurrency] = useState('ETH');
-  const [newCurrency, setNewCurrency] = useState('USDC');
+  const [oldChain, setOldChain] = useState('ethereum');
+  const [newChain, setNewChain] = useState('cross-chain');
+  const [oldToken, setOldToken] = useState('ETH');
+  const [newToken, setNewToken] = useState('USDC');
   const [amount, setAmount] = useState('');
   const [convertedPrice, setConvertedPrice] = useState(null);
+  const [minReturn, setMinReturn] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
   const [connected, setConnected] = useState(false);
 
   // Swap the currencies when clicking the button
   const swapCurrencies = () => {
-    setOldCurrency(newCurrency);
-    setNewCurrency(oldCurrency);
+	setOldChain(newChain);
+	setNewChain(oldChain);
+    setOldToken(newToken);
+    setNewToken(oldToken);
     setConvertedPrice(null);
     setAmount('');
   };
@@ -39,7 +44,7 @@ function App() {
     userSelect: 'none',
   }}
 >
-  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{oldCurrency}</div>
+  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{oldToken}</div>
 
   {/* Arrow button container to center precisely */}
   <button
@@ -66,7 +71,7 @@ function App() {
     ↔️
   </button>
 
-  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{newCurrency}</div>
+  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{newToken}</div>
 </div>
 
 {/* Wallet Connector and Swap Form go here */}
@@ -80,12 +85,15 @@ function App() {
   <SwapForm
 	connected={connected}
 	walletAddress={walletAddress}
-	oldCurrency={oldCurrency}
-	newCurrency={newCurrency}
+	newChain={newChain}
+	oldToken={oldToken}
+	newToken={newToken}
 	amount={amount}
 	setAmount={setAmount}
 	convertedPrice={convertedPrice}
 	setConvertedPrice={setConvertedPrice}
+	minReturn={minReturn}
+	setMinReturn={setMinReturn}
   />
 )}
 

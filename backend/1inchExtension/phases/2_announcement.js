@@ -1,7 +1,7 @@
 
 
-const ContractListener = require('../contracts/ContractListener');
-const contracts = require('../contracts/contractData');
+const ContractListener = require('../utils/ContractListener');
+const contracts = require('../utils/contractData');
 const {storeVerifiedOrder} = require('../order');
 
 function announcement(sender, msg, value){

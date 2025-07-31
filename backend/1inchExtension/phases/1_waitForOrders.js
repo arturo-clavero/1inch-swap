@@ -1,4 +1,6 @@
-const { setupOrderWatcher } = require('./utils/setupOrderWatcher');
+const { setupOrderWatcher } = require('../relayers/orderWatcher');
+const Redis = require('ioredis');
+const redis = new Redis();
 
 async function waitForOrders(self) {
 	console.log("waiting for orders")

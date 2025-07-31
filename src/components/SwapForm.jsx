@@ -1,48 +1,46 @@
 import { useEffect, useState } from 'react';
 import { fetchQuote } from '../hooks/useQuoteFetcher';
-import axios from "axios";
-import { getContract } from '../utils/contract';
+import { initiateTrade } from '../interactions/initiateTrade';
 
 const SwapForm = ({
-  connected, walletAddress, oldCurrency, newCurrency,
-  amount, setAmount, convertedPrice, setConvertedPrice
+  connected, walletAddress,
+  oldToken, newToken, newChain, 
+  amount, setAmount, minReturn, setMinReturn,
+  convertedPrice, setConvertedPrice, 
+
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (connected && amount && Number(amount) > 0) {
-      setIsLoading(true);
-      fetchQuote(oldCurrency, amount, newCurrency, walletAddress)
-        .then((price) => {
-          setConvertedPrice(price);
-        })
-        .catch(() => {
-          setConvertedPrice(null);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setConvertedPrice(null);
-      setIsLoading(false);
-    }
-  }, [connected, amount, oldCurrency, newCurrency, walletAddress]);
-
-	const initiateTrade = async () => {
+	console.log("useEffect triggered", { connected, amount, oldToken, newToken });
+	
+	if (connected && amount && Number(amount) > 0) {
+	  setIsLoading(true);
+  
+	  async function fetchPrice() {
 		try {
-			const contract = await getContract(oldCurrency);
-			const tx = await contract.createOrder(args);//TODO
-			await tx.wait();
-			console.log("Success!");
-			
-		  } catch (err) {
-			console.error("Tx failed:", err);
-		  }
-	};
+		  const price = await fetchQuote(oldToken, amount, newToken);
+		  console.log("Price fetched:", price);
+		  setConvertedPrice(price);
+		} catch (error) {
+		  console.error("Fetch quote error:", error);
+		  setConvertedPrice(null);
+		} finally {
+		  setIsLoading(false);
+		}
+	  }
+  
+	  fetchPrice();
+	} else {
+	  setConvertedPrice(null);
+	  setIsLoading(false);
+	}
+  }, [connected, oldToken, amount, newToken]);
+  
 
   return (
     <>
-      <label>Amount in {oldCurrency}</label>
+      <label>Amount in {oldToken}</label>
       <input
         type="number"
         placeholder="0.0"
@@ -58,15 +56,26 @@ const SwapForm = ({
 			</p>
 		) : (
 			<p>
-			You will receive ~ {convertedPrice || '...'} {newCurrency}
+			You will receive ~ {convertedPrice || '...'} {newToken}
 			</p>
 		)
 		)}
 
-
-      <button onClick={initiateTrade} disabled={!amount || Number(amount) <= 0}>
-        Swap
-      </button>
+	<button
+	onClick={() =>
+		initiateTrade({
+			oldToken,
+			newToken,
+			newChain,
+			amount,
+			convertedPrice,
+			minReturn,
+		})
+	}
+	disabled={!amount || Number(amount) <= 0}
+	>
+	Swap
+	</button>
 
 	  <p className="connected">
   Connected as{' '}

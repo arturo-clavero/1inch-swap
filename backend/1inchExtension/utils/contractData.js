@@ -11,16 +11,16 @@ const providerAnvil = new WebSocketProvider(process.env.RPC_WS_ANVIL);
 
 //add your contract data here and get contract by importing contracts and getting it by name
 const contractData = [
-	{
-		name: "test",
-		address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-		abi: require('./abi/Test.json'),
-		provider: providerAnvil,
-	},
+	// {
+	// 	name: "test",
+	// 	address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+	// 	abi: require('./abi/Test.json'),
+	// 	provider: providerAnvil,
+	// },
 	{
 		name: "router",
 		address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-		abi: require('./abi/Router.json'),
+		abi: require('../../../abi/fake.json'),
 		provider: providerAnvil,
 	},
 ];

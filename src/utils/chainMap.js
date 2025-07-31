@@ -1,13 +1,19 @@
 export const chainMap = {
-	ETH: {
-	  chainId: 1,
-	  tokenAddress: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-	  decimals: 18,
-	},
-	USDC: {
-	  chainId: 137,
-	  tokenAddress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-	  decimals: 6,
-	},
+	"chainId" : {
+		"ethereum": 1,
+		"ETH": 1,
+		"cross-chain": 534351,
+		"SCR": 534351,
+	  },
+	   "token" : {
+		"ETH": "0xA0b86991c6218b36c1d19d4a2e9eb0cE3606eB48",
+		"SCR": "0x4200000000000000000000000000000000000006",
+	  },
+	//   "decimals" : {
+	// 	"ETH" : ,
+	// 	"SCR" : ,
+	//   }
+	
   };
-  
+
+

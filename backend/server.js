@@ -30,6 +30,6 @@ app.listen(port, () => {
 	.catch(console.error);
 
     // Start listening for orders
-    require('./1inchExtension/announcementPhase')();
+    require('./1inchExtension/phases/2_announcement')();
 
 });

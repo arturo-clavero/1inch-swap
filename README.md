@@ -100,6 +100,7 @@ To use a smart contract in your actions, you need to import and configure it.
    Make sure the following values are set:
 
    ```
+   PORT=3000
    RPC_WS_ANVIL=http://127.0.0.1:8545
    WALLET_PRIVATE_KEY=your_private_key_without_quotes
    ```
