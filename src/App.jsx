@@ -9,10 +9,11 @@ function App() {
   const [oldChain, setOldChain] = useState('ethereum');
   const [newChain, setNewChain] = useState('cross-chain');
   const [oldToken, setOldToken] = useState('ETH');
-  const [newToken, setNewToken] = useState('USDC');
+  const [newToken, setNewToken] = useState('SCR');
   const [amount, setAmount] = useState('');
   const [convertedPrice, setConvertedPrice] = useState(null);
   const [minReturn, setMinReturn] = useState(null);
+  const [maxDuration, setMaxDuration] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
   const [connected, setConnected] = useState(false);
 
@@ -95,6 +96,7 @@ function App() {
 	setConvertedPrice={setConvertedPrice}
 	minReturn={minReturn}
 	setMinReturn={setMinReturn}
+	maxDuration={setMaxDuration}
   />
 )}
 

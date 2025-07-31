@@ -5,8 +5,8 @@ import { initiateTrade } from '../interactions/initiateTrade';
 const SwapForm = ({
   connected, walletAddress,
   newChain, oldChain, newToken, oldToken, 
-  amount, setAmount, minReturn, setMinReturn,
-  convertedPrice, setConvertedPrice, 
+  amount, setAmount, convertedPrice, setConvertedPrice, 
+  minReturn, setMinReturn, maxDuration, setMaxDuration
 
 }) => {
 const [isLoading, setIsLoading] = useState(false);
@@ -67,14 +67,15 @@ useEffect(() => {
 
 	<button
 	onClick={() =>
-		initiateTrade({
+		initiateTrade(
 			oldToken,
 			newToken,
 			newChain,
 			amount,
 			convertedPrice,
 			minReturn,
-		})
+			maxDuration,
+		)
 	}
 	disabled={!amount || Number(amount) <= 0}
 	>

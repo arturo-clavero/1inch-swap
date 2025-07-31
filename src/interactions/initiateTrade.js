@@ -2,17 +2,16 @@ import { getContract } from '../utils/contract';
 import { ethers } from "ethers";
 import { chainMap } from '../utils/chainMap';
 
-
-
 export const initiateTrade = async (
-	oldCurrency,
-	newCurrency,
+	oldToken,
+	newToken,
 	newChain,
 	amount,
-	startReturnAmount = 0,
+	startReturnAmount,
 	minReturnAmount = -1,
 	maxDuration = 3600,
 ) => {
+
 	const now = Math.floor(Date.now() / 1000);
 	const startTimestamp = now + 60;
 	const expirationTimestamp = now + maxDuration; 
@@ -23,14 +22,16 @@ export const initiateTrade = async (
 	const signature = await signer.signMessage(ethers.getBytes(messageHash));
 	if (minReturnAmount == -1)
 		minReturnAmount = startReturnAmount * 0.8;
-
 	try {
-		const contract = await getContract(oldCurrency);
+		const contract = await getContract(oldToken);
+		console.log(contract.interface.fragments.map(f => f.name));
+
+		console.log("before tx")
 		const tx = await contract.createOrder(
-			chainMap[token][oldToken],
+			chainMap["token"][oldToken],
 			amount,
-			chainMap[token][newToken],
-			chainMap[chainId][newChain],
+			chainMap["token"][newToken],
+			chainMap["chainId"][newChain],
 			startReturnAmount,
 			startTimestamp,
 			minReturnAmount,
@@ -38,9 +39,8 @@ export const initiateTrade = async (
 			signature
 		);
 		await tx.wait();
-		console.log("Success!");
-		
-	  } catch (err) {
+		console.log("tx done");
+	} catch (err) {
 		console.error("Tx failed:", err);
-	  }
+	}
 };
