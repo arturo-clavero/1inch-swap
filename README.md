@@ -103,6 +103,7 @@ To use a smart contract in your actions, you need to import and configure it.
    PORT=3000
    RPC_WS_ANVIL=http://127.0.0.1:8545
    WALLET_PRIVATE_KEY=your_private_key_without_quotes
+   ONEINCH_API_KEY=your_1inch_api_key_without_quotes
    ```
 
    If using Anvil, use one of the mock private keys printed at launch.

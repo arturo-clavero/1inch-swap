@@ -2,10 +2,6 @@ import { ethers, JsonRpcProvider } from 'ethers';
 import axios from 'axios';
 import { chainMap } from '../utils/chainMap';
 
-export const fetchQuote = async (oldToken, amount, newToken) => {
-	console.log("hello???");
-	const provider = new JsonRpcProvider("https://scroll.drpc.org");
-	
 const aggregatorV3InterfaceABI = [
 	{
 	  inputs: [],
@@ -54,61 +50,78 @@ const aggregatorV3InterfaceABI = [
 	  stateMutability: "view",
 	  type: "function",
 	},
-  ]
-	const feedAddress = "0x26f6F7C468EE309115d19Aa2055db5A74F8cE7A5";
-	const priceFeed = new ethers.Contract(feedAddress, aggregatorV3InterfaceABI, provider);
-	priceFeed.latestRoundData().then((roundData) => {
-		console.log("Latest Round Data", roundData);
-	  
-		priceFeed.decimals().then((rawDecimals) => {
-		  const rawPrice = roundData[1];
-		  console.log("raw price: ", rawPrice);
-		  console.log("raw decime", rawDecimals);
+]
 
-		  const price = Number(rawPrice) / Math.pow(10, Number(rawDecimals));
-	  
-		  console.log("Price with decimals:", price);
-		  return (calculateConversion("USD", price, amount, oldToken, newToken))
-		  //price is 1 scroll in usd...
-		});
-	  });
-	  
-};
 
-async function calculateConversion(stableToken, crossChainRate, amount, oldToken, newToken){
+export const fetchQuote = async (oldToken, srcChain, amount, newToken, dstChain) => {
+	try {
+	  console.log("hello???");
+	  const provider = new JsonRpcProvider("https://scroll.drpc.org");
+  
+	  const feedAddress = "0x26f6F7C468EE309115d19Aa2055db5A74F8cE7A5";
+	  const priceFeed = new ethers.Contract(feedAddress, aggregatorV3InterfaceABI, provider);
+  
+	  const roundData = await priceFeed.latestRoundData();
+	  console.log("Latest Round Data", roundData);
+  
+	  const rawDecimals = await priceFeed.decimals();
+	  const rawPrice = roundData[1];
+	  console.log("raw price: ", rawPrice.toString());
+	  console.log("raw decimals", rawDecimals);
+  
+	  const price = Number(rawPrice) / Math.pow(10, Number(rawDecimals));
+	  console.log("Price with decimals:", price);
+  
+	  const conversionResult = await calculateConversion("USDC", price, amount, oldToken, srcChain, newToken, dstChain);
+	  console.log("Conversion result:", conversionResult);
+  
+	  return conversionResult;
+  
+	} catch (err) {
+	  	console.error("Error during price fetch or conversion:", err);
+	  throw err;
+	}
+  };
+  
+
+async function calculateConversion(stableToken, crossChainRate, amount, oldToken, srcChain, newToken, dstChain){
+	console.log("cross chain rate: ", crossChainRate);
 	if (newToken == "ETH"){
+		console.log("from cross chain");
 		let crossChainInStableCoin = crossChainRate * amount;
-		let quote = await oneInchQuote(stableToken, crossChainInStableCoin, newToken);
-		console.log("quote: ", quote);
+		console.log("cross chain in stable coin: ", crossChainInStableCoin);
+		let quote = await oneInchQuote(stableToken, srcChain, crossChainInStableCoin, newToken, dstChain);
+		console.log("final: ", quote);
 		return (quote);
 	}
 	else if (oldToken == "ETH"){
-		let quote = await oneInchQuote(stableToken, amount, oldToken);
+		console.log("from ETH");
+		let quote = await oneInchQuote(stableToken, srcChain, amount, oldToken, dstChain);
+		console.log("quote: ", quote);
 		let price = quote / crossChainRate;
-		console.log("quote: ", price);
+		console.log("final: ", price);
 		return price;
 	}
 }
 
-// async function oneInchQuote(src, amount, dst){
-
-async function oneInchQuote(src, amount, dst) {
+async function oneInchQuote(srcToken, srcChain, amount, dstToken, dstChain) {
 	let quote;
-
-
+	console.log("src chain: ", srcChain);
+	console.log("res: ", chainMap["chainId"][srcChain])
   try {
-    const response = await axios.post('http://localhost:3001/api/1inchQuote', {
-      srcChain: chainMap["chainId"][src],
-      dstChain: chainMap["chainId"][dst],
-      srcTokenAddress: chainMap["token"][src],
-      dstTokenAddress:  chainMap["token"][dst],
+    const response = await axios.post('http://localhost:3000/api/1inchQuote', {
+      srcChain: chainMap["chainId"][srcChain],
+      dstChain: chainMap["chainId"][dstChain],
+      srcTokenAddress: chainMap["token"][srcToken],
+      dstTokenAddress:  chainMap["token"][dstToken],
       amount: '1000000000000000000', 
       walletAddress: '0x0000000000000000000000000000000000000000',
       enableEstimate: true
     });
 
     console.log('Backend response:', response.data);
-	quote = response.data;
+	console.log("lets see: ", response.data["quote"])
+	quote = response.data["quote"];
   } catch (error) {
     console.error('Error fetching quote:', error);
   }

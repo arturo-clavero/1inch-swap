@@ -86,8 +86,9 @@ function App() {
 	connected={connected}
 	walletAddress={walletAddress}
 	newChain={newChain}
-	oldToken={oldToken}
+	oldChain={oldChain}
 	newToken={newToken}
+	oldToken={oldToken}
 	amount={amount}
 	setAmount={setAmount}
 	convertedPrice={convertedPrice}

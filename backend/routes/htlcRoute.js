@@ -8,10 +8,6 @@ router.get('/', (req, res) =>{
     res.send('this is bacjend');
 });
 
-// router.post('/1inchQuote', (req, res) =>{
-//     const {quote} = fetchQuote();
-//     res.json( {quote});//fly to frontend
-// });
 router.post('/generate', (req, res) =>{
     const {hash} = generateSecret();
     res.json( {hash});//fly to frontend
@@ -31,11 +27,7 @@ module.exports = router;
 
 router.post('/1inchQuote', async (req, res) => {
 	const { srcChain, dstChain, srcTokenAddress, dstTokenAddress, amount } = req.body;
-
-	console.log('Received from frontend:', req.body);
-
-	// Example: make 1inch API call here if needed
 	const quote = await fetchQuote(srcChain, dstChain, srcTokenAddress, dstTokenAddress, amount);
-
+	console.log("the quote in backend is ... ", quote);
 	res.json({quote})
 });

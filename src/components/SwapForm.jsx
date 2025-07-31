@@ -4,7 +4,7 @@ import { initiateTrade } from '../interactions/initiateTrade';
 
 const SwapForm = ({
   connected, walletAddress,
-  oldToken, newToken, newChain, 
+  newChain, oldChain, newToken, oldToken, 
   amount, setAmount, minReturn, setMinReturn,
   convertedPrice, setConvertedPrice, 
 
@@ -19,7 +19,7 @@ const SwapForm = ({
   
 	  async function fetchPrice() {
 		try {
-		  const price = await fetchQuote(oldToken, amount, newToken);
+		  const price = await fetchQuote(oldToken, oldChain, amount, newToken, newChain);
 		  console.log("Price fetched:", price);
 		  setConvertedPrice(price);
 		} catch (error) {
