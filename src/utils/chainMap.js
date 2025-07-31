@@ -6,15 +6,13 @@ export const chainMap = {
 		"SCR": 534351,
 	  },
 	   "token" : {
-		"ETH": "0xA0b86991c6218b36c1d19d4a2e9eb0cE3606eB48",
+		"ETH": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
 		"SCR": "0x4200000000000000000000000000000000000006",
-		"USDC": "0x1FC10251dD2c9b2C0AcF6B314FcB3b58c5bF1639",
+		"USDC": "0xA0b86991c6218b36c1d19d4a2e9eb0cE3606eB48",
 	  },
-	//   "decimals" : {
-	// 	"ETH" : ,
-	// 	"SCR" : ,
-	//   }
-	
-  };
-
-
+	  "decimals": {
+		"ETH": 18,
+		"SCR": 18,
+		"USDC": 6,
+	  }
+};

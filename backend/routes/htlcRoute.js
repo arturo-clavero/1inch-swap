@@ -23,11 +23,10 @@ router.post('/refund', (req, res) =>{
     res.send('timelock expired')
 });
 
-module.exports = router;
-
 router.post('/1inchQuote', async (req, res) => {
-	const { srcChain, dstChain, srcTokenAddress, dstTokenAddress, amount } = req.body;
-	const quote = await fetchQuote(srcChain, dstChain, srcTokenAddress, dstTokenAddress, amount);
-	console.log("the quote in backend is ... ", quote);
+	const {srcTokenAddress, dstTokenAddress, amount } = req.body;
+	const quote = await fetchQuote(srcTokenAddress, dstTokenAddress, amount);
 	res.json({quote})
 });
+
+module.exports = router;

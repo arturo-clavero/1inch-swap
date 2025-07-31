@@ -9,34 +9,31 @@ const SwapForm = ({
   convertedPrice, setConvertedPrice, 
 
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
+const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-	console.log("useEffect triggered", { connected, amount, oldToken, newToken });
-	
+useEffect(() => {
 	if (connected && amount && Number(amount) > 0) {
-	  setIsLoading(true);
-  
-	  async function fetchPrice() {
-		try {
-		  const price = await fetchQuote(oldToken, oldChain, amount, newToken, newChain);
-		  console.log("Price fetched:", price);
-		  setConvertedPrice(price);
-		} catch (error) {
-		  console.error("Fetch quote error:", error);
-		  setConvertedPrice(null);
-		} finally {
-		  setIsLoading(false);
+		setIsLoading(true);
+
+		async function fetchPrice() {
+			try {
+				const price = await fetchQuote(oldToken, amount, newToken);
+				setConvertedPrice(price);
+			} catch (error) {
+				console.error("Fetch quote error:", error);
+				setConvertedPrice(null);
+			} finally {
+				setIsLoading(false);
+			}
 		}
-	  }
-  
-	  fetchPrice();
-	} else {
-	  setConvertedPrice(null);
-	  setIsLoading(false);
+		fetchPrice();
+	} 
+	else {
+		setConvertedPrice(null);
+		setIsLoading(false);
 	}
-  }, [connected, oldToken, amount, newToken]);
-  
+}, [connected, oldToken, amount, newToken]);
+
 
   return (
     <>
@@ -56,7 +53,14 @@ const SwapForm = ({
 			</p>
 		) : (
 			<p>
-			You will receive ~ {convertedPrice || '...'} {newToken}
+			You will receive ~ {
+			convertedPrice 
+				? (convertedPrice < 1 
+					? Number(convertedPrice).toPrecision(6)
+					: Number(convertedPrice).toFixed(2)
+				) 
+				: '...'
+			} {newToken}
 			</p>
 		)
 		)}
