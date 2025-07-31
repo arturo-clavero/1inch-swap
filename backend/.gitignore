@@ -1,8 +1,0 @@
-node_modules/
-logs
-*.log
-npm-debug.log*
-.env
-nbr.json
-.DS_Store
-

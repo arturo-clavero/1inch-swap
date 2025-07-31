@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./interfaces/IL1GatewayRouter.sol";
 import "./interfaces/IFusionOrder.sol";
 
 //deployed on ethereum!
@@ -67,30 +66,31 @@ contract EthereumRouter is ReentrancyGuard {
             revert DoubleOrder();
         }
 
-    //Create and store order
-    IFusionOrder.Order memory order = IFusionOrder.Order({
-        orderId: orderId,
-        maker: msg.sender,
-        sourceToken: sourceToken,
-        sourceAmount: sourceAmount,
-        destinationToken: destinationToken,
-        sourceChainId: uint32(block.chainid),
-        destinationChainId: destinationChainId,
-        startReturnAmount: startReturnAmount,
-        startTimestamp: startTimestamp,
-        minReturnAmount: minReturnAmount,
-        expirationTimestamp: expirationTimestamp,
-        signature: signature
-    });
+		//Create and store order
+		IFusionOrder.Order memory order = IFusionOrder.Order({
+			orderId: orderId,
+			maker: msg.sender,
+			sourceToken: sourceToken,
+			sourceAmount: sourceAmount,
+			destinationToken: destinationToken,
+			sourceChainId: uint32(block.chainid),
+			destinationChainId: destinationChainId,
+			startReturnAmount: startReturnAmount,
+			startTimestamp: startTimestamp,
+			minReturnAmount: minReturnAmount,
+			expirationTimestamp: expirationTimestamp,
+			signature: signature
+		});
 
-    //Store order
-    orderDetails[orderId] = order;
-    //Set initial state
-    orders[orderId] = _statePending;
-    //Emit event
-    emit OrderCreated(orderId, msg.sender);
+		verifyOrder(order);
+		//Store order
+		orderDetails[orderId] = order;
+		//Set initial state
+		orders[orderId] = _statePending;
+		//Emit event
+		emit OrderCreated(orderId, msg.sender);
 
-    return orderId;
+		return orderId;
     }
 
     function verifyOrder(IFusionOrder.Order memory order) private view returns (bool) { //added

@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./interfaces/IL2GatewayRouter.sol";
 import "./interfaces/IFusionOrder.sol";
 
 //deployed on scroll!
