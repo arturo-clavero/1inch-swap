@@ -96,7 +96,8 @@ function App() {
 	setConvertedPrice={setConvertedPrice}
 	minReturn={minReturn}
 	setMinReturn={setMinReturn}
-	maxDuration={setMaxDuration}
+	maxDuration={maxDuration}
+	setMaxDuration={setMaxDuration}
   />
 )}
 

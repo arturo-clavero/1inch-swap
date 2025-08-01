@@ -1,5 +1,5 @@
 import { getContract } from '../utils/contract';
-import { ethers } from "ethers";
+import { ethers , parseUnits} from "ethers";
 import { chainMap } from '../utils/chainMap';
 
 export const initiateTrade = async (
@@ -8,10 +8,12 @@ export const initiateTrade = async (
 	newChain,
 	amount,
 	startReturnAmount,
-	minReturnAmount = -1,
-	maxDuration = 3600,
+	minReturnAmount = null,
+	maxDuration = null,
 ) => {
-
+	if (minReturnAmount == null) minReturnAmount = startReturnAmount * 0.8;
+	if (maxDuration == null) maxDuration = 3600;
+	
 	const now = Math.floor(Date.now() / 1000);
 	const startTimestamp = now + 60;
 	const expirationTimestamp = now + maxDuration; 
@@ -20,21 +22,32 @@ export const initiateTrade = async (
 	const signer = await provider.getSigner();
 	const messageHash = ethers.keccak256(ethers.toUtf8Bytes("sign this order"));
 	const signature = await signer.signMessage(ethers.getBytes(messageHash));
-	if (minReturnAmount == -1)
-		minReturnAmount = startReturnAmount * 0.8;
+	
 	try {
 		const contract = await getContract(oldToken);
 		console.log(contract.interface.fragments.map(f => f.name));
 
 		console.log("before tx")
+		console.log("Old Token Address:", chainMap["token"][oldToken]);
+		console.log("Amount:", amount);
+		console.log("New Token Address:", chainMap["token"][newToken]);
+		console.log("New Chain ID:", chainMap["chainId"][newChain]);
+		console.log("Start Return Amount:", startReturnAmount);
+		console.log("Start Timestamp:", startTimestamp);
+		console.log("Minimum Return Amount:", minReturnAmount);
+		console.log("max duration: ", maxDuration)
+		console.log("now: ", now);
+		console.log("Expiration Timestamp:", expirationTimestamp);
+		console.log("Signature:", signature);
+		
 		const tx = await contract.createOrder(
 			chainMap["token"][oldToken],
-			amount,
+			parseUnits(`${amount}`, chainMap["decimals"][oldToken]),
 			chainMap["token"][newToken],
 			chainMap["chainId"][newChain],
-			startReturnAmount,
+			parseUnits(`${startReturnAmount}`, chainMap["decimals"][newToken]),
 			startTimestamp,
-			minReturnAmount,
+			parseUnits(`${minReturnAmount}`, chainMap["decimals"][newToken]),
 			expirationTimestamp,
 			signature
 		);
