@@ -1,33 +1,34 @@
 import { useEffect, useState } from 'react';
 import { fetchQuote } from '../hooks/useQuoteFetcher';
+
 import HTLC_abi from "../../abi/HTLC.json";
 import { ethers, Contract } from "ethers";
 import axios from "axios";
+import { generateSecret } from './Handling';
 
 const ethHtlc = import.meta.env.VITE_ETH_CONTRACT_ADDRESS;
 const scrollHtlc = import.meta.env.VITE_SCROLL_CONTRACT_ADDRESS;
-console.log("ethHtlc",ethHtlc );
-console.log("scrollHtlc", scrollHtlc);
-
+const relayer_address = import.meta.env.VITE_RELAYER_ADDRESS;
+console.log("relayer", relayer_address);
 const SwapForm = ({
   connected, walletAddress, oldCurrency, newCurrency,
   amount, setAmount, convertedPrice, setConvertedPrice
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-
+  
   useEffect(() => {
     if (connected && amount && Number(amount) > 0) {
       setIsLoading(true);
       fetchQuote(oldCurrency, amount, newCurrency, walletAddress)
-        .then((price) => {
-          setConvertedPrice(price);
-        })
-        .catch(() => {
-          setConvertedPrice(null);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+      .then((price) => {
+        setConvertedPrice(price);
+      })
+      .catch(() => {
+        setConvertedPrice(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
     } else {
       setConvertedPrice(null);
       setIsLoading(false);
@@ -40,16 +41,14 @@ const SwapForm = ({
   
   //the lock triggers next event - relayer listens for the event - get swapId hashlock->
   //-> triggers the event for relayer/resolver "lock the same amount on the scroll"
-
-
+  
+  
   const handleSwap = async () => {
     if (isSwapping) return ;
     try {
       setIsSwapping(true);
-      const response = await axios.post('http://localhost:3000/api/generate');
-      const hash = response.data.hash; 
+      const {hash, secret } = generateSecret();
       const bytesHashlock = hash.startsWith("0x") ? hash : "0x" + hash;
-      console.log("from backend hash is", hash);
       
       //user should sign the swap -> create instance with user signer
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -66,9 +65,9 @@ const SwapForm = ({
       const htlcContract = new ethers.Contract(contract, HTLC_abi, signer);  
       const amount = ethers.parseEther("0.00000001");
       const timelock =  Math.floor(Date.now() / 1000) + 60 * 5;
-      console.log("im before the contract");
       const txn = await htlcContract.createSwap(
-          walletAddress, 
+          relayer_address,
+          // walletAddress, 
           bytesHashlock, 
           timelock,
           { value: amount }
@@ -83,6 +82,35 @@ const SwapForm = ({
     }
     finally{
       setIsSwapping(false);
+    }
+
+    const withdraw = async () => {
+      try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          let contract;
+            if (oldCurrency.toLowerCase() === "eth") {
+                contract = ethHtlc;
+            } else if ( oldCurrency.toLowerCase() === "scroll"){
+                contract = scrollHtlc;
+            } else {
+                alert('unsupported chain');
+            }
+            const htlcContract = new ethers.Contract(contract, HTLC_abi, signer);
+            const hash = () => localStorage.getItem('hash') || '';
+            const response = await axios.get('http://localhost:3000/api/swap/${hash}');
+            const swapId = response.data.swapId;
+            console.log("the swap Id is ", swapId);
+            const secret = () => localStorage.getItem('secret') || '';
+            const txn = await htlcContract.withdraw(swapId, secret);
+            await txn.await();
+            alert ("Withdraw successful");
+            localStorage.removeItem('secret', secret);
+            localStorage.removeItem('hash', hash);
+         } catch (err){
+            console.error("Withdraw unseccessfull", err);
+            alert ("Withdraw failed: " + err.message);
+         }
     }
   };
 
