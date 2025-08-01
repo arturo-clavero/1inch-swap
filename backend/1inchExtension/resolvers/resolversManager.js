@@ -1,6 +1,6 @@
-const Resolver = require('./Relayers');
+const Resolver = require('./Resolvers');
 
-async function startRelayers(count = 1) {
+async function startResolvers(count = 1) {
 	const resolvers = [];
 	for (let i = 0; i < count; i++) {
 		const resolver = new Resolver(i + 1);
@@ -10,4 +10,4 @@ async function startRelayers(count = 1) {
 	await Promise.all(resolvers.map((r) => r.nextAction()));
 }
 
-module.exports = { startRelayers };
+module.exports = { startResolvers };

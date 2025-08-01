@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 });
 
 const htlsRoutes = require('./routes/htlcRoute');
-const { startRelayers } = require('./1inchExtension/relayers/relayersManager');
+const { startResolvers } = require('./1inchExtension/resolvers/resolversManager');
 app.use('/api', htlsRoutes);
 
 const port = process.env.PORT;
@@ -24,9 +24,9 @@ app.listen(port, () => {
     console.log(`http://localhost:${port}`);
 
 	// start resolvers
-	const { startRelayers } = require('./1inchExtension/relayers/relayersManager');
-	startRelayers(totalresolvers)
-	.then(() => console.log('relayers started and waiting for orders'))
+	const { startResolvers } = require('./1inchExtension/resolvers/resolversManager');
+	startResolvers(totalresolvers)
+	.then(() => console.log('resolvers started and waiting for orders'))
 	.catch(console.error);
 
     // Start listening for orders

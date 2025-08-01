@@ -3,7 +3,7 @@ const { dutchAuction } = require('../phases/3_dutchAuction');
 const { deposit } = require('../phases/4_deposit');
 const { withdraw } = require('../phases/5_withdraw');
 
-class Relayer {
+class Resolver {
 	constructor(id, minPrice = 0, refill = 1) {
 		this.id = id;
 		this.minPrice = minPrice;
@@ -61,4 +61,4 @@ class Relayer {
 	
 }
 
-module.exports = Relayer;
+module.exports = Resolver;

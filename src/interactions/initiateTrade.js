@@ -32,7 +32,8 @@ export const initiateTrade = async (
 			order.startTimestamp,
 			order.minReturnAmount,
 			order.expirationTimestamp,
-			order.signature
+			order.signature,
+			order.id
 		);
 		await tx.wait();
 		console.log("tx done");

@@ -1,5 +1,5 @@
 const {getAllOrders, removeOrder} = require('../order.js');
-const { setupOrderWatcher } = require('../relayers/orderWatcher');
+const { setupOrderWatcher } = require('../resolvers/orderWatcher.js');
 
 function getDutchPrice(order){
 	const now = Math.floor(Date.now() / 1000);

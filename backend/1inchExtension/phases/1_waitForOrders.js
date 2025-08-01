@@ -1,4 +1,4 @@
-const { setupOrderWatcher } = require('../relayers/orderWatcher');
+const { setupOrderWatcher } = require('../resolvers/orderWatcher');
 const Redis = require('ioredis');
 const redis = new Redis();
 
