@@ -70,6 +70,7 @@ useEffect(() => {
 		initiateTrade(
 			oldToken,
 			newToken,
+			oldChain,
 			newChain,
 			amount,
 			convertedPrice,

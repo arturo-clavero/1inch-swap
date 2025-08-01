@@ -4,17 +4,26 @@ const ContractListener = require('../utils/ContractListener');
 const contracts = require('../utils/contractData');
 const {storeVerifiedOrder} = require('../order');
 
-function announcement(sender, msg, value){
-	console.log("event emited: ", msg);
+function announcement(value, sender){
+	console.log("event emited new order: ", value);
 	const id = Number(value);
 	storeVerifiedOrder(id);
 }
 
 module.exports =  function listenVerifiedOrder() {
-	const listener = new ContractListener(
-		contracts["router"],
-		"OrderVerified",
+	const listenerETH = new ContractListener(
+		contracts["ETH"],
+		"OrderCreated",
 		announcement
 	);
-	listener.start();
+	listenerETH.start();
+
+	//TODO!!!
+	
+	// const listenerSCR = new ContractListener(
+	// 	contracts["SCR"],
+	// 	"OrderVerified",
+	// 	announcement
+	// );
+	// listenerSCR.start();
 }

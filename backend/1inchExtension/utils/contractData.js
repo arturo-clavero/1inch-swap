@@ -23,6 +23,12 @@ const contractData = [
 		abi: require('../../../abi/fake.json'),
 		provider: providerAnvil,
 	},
+	{
+		name: "ETH",
+		address: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+		abi: require('../../../abi/Eth.json').abi,
+		provider: providerAnvil,
+	},
 ];
 
 const pKey = process.env.WALLET_PRIVATE_KEY;

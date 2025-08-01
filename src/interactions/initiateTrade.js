@@ -6,21 +6,25 @@ import { chainMap } from '../utils/chainMap';
 export const initiateTrade = async (
 	oldToken,
 	newToken,
+	oldChain,
 	newChain,
 	amount,
 	startReturnAmount,
 	minReturnAmount = null,
 	maxDuration = null,
 ) => {
+	console.log("hello");
 	const order = await createOrder(
 		oldToken,
 		newToken,
+		oldChain,
 		newChain,
 		amount,
 		startReturnAmount,
 		minReturnAmount,
 		maxDuration
 	)
+	console.log("created order");
 	try {
 		const contract = await getContract(oldToken);
 		const tx = await contract.createOrder(
@@ -35,8 +39,19 @@ export const initiateTrade = async (
 			order.signature,
 			order.id
 		);
-		await tx.wait();
-		console.log("tx done");
+		//await tx.wait();
+		//DEBUGGING
+		const receipt = await tx.wait();
+		console.log("Transaction hash:", receipt.transactionHash);
+		console.log("Status:", receipt.status); 
+		console.log("Events emitted:");
+		for (const event of receipt.events) {
+		console.log(event.event, event.args);
+		}
+		console.log("logs: ");
+		for (const log of receipt.logs) {
+			console.log(log); // raw log data (topics, data, etc.)
+		}
 	} catch (err) {
 		console.error("Tx failed:", err);
 	}
