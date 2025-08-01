@@ -9,7 +9,6 @@ import "./interfaces/IFusionOrder.sol";
 contract EthereumRouter is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    error tokenNotMapped();
     error DoubleOrder();
     //errors added
     error InvalidSignature();
@@ -18,14 +17,7 @@ contract EthereumRouter is ReentrancyGuard {
     error InsufficientAllowance();
     error InvalidTimestamp();
 
-    event BridgeStarted(uint256 indexed orderId);
-    event BridgeFinished(uint256 indexed orderId);
     event OrderCreated(uint256 indexed orderId, address indexed maker);
-
-    uint256 constant _stateFinished = 0;
-    uint256 constant _stateVerified = 1;
-    uint256 constant _statePending = 2;
-    uint256 constant _stateCancelled = 3;
 
     mapping(uint256 => uint256) private orders;
     mapping(uint256 => IFusionOrder.Order) private orderDetails; // added
@@ -39,34 +31,14 @@ contract EthereumRouter is ReentrancyGuard {
         uint256 startTimestamp,
         uint256 minReturnAmount,
         uint256 expirationTimestamp,
-        bytes calldata signature
-    ) external returns (uint256) {
-        // Check timestamp
-        if (expirationTimestamp <= block.timestamp) {
-            revert OrderExpired();
-        }
-        if (startTimestamp >= expirationTimestamp) {
-            revert InvalidTimestamp();
-        }
-        //Generate order ID (hash of parameters + nonce)
-        uint256 orderId = uint256(keccak256(abi.encodePacked(
-            msg.sender,
-            sourceToken,
-            sourceAmount,
-            destinationToken,
-            block.chainid,
-            destinationChainId,
-            startReturnAmount, //Starting price of dutch auction
-            startTimestamp, //Starting time of dutch auction
-            minReturnAmount, //Minimum ending price of dutch auction
-            expirationTimestamp,
-            block.timestamp
-        )));
-        if (orders[orderId] != 0) {
+        bytes calldata signature,
+		uint256 orderId
+    ) external {
+
+        if (orderDetails[orderId].maker != address(0)) {
             revert DoubleOrder();
         }
-
-		//Create and store order
+		
 		IFusionOrder.Order memory order = IFusionOrder.Order({
 			orderId: orderId,
 			maker: msg.sender,
@@ -83,17 +55,15 @@ contract EthereumRouter is ReentrancyGuard {
 		});
 
 		verifyOrder(order);
-		//Store order
+
+		//store order
 		orderDetails[orderId] = order;
-		//Set initial state
-		orders[orderId] = _statePending;
-		//Emit event
+
 		emit OrderCreated(orderId, msg.sender);
 
-		return orderId;
-    }
+	}
 
-    function verifyOrder(IFusionOrder.Order memory order) private view returns (bool) { //added
+    function verifyOrder(IFusionOrder.Order memory order) private view { //added
         //Check for order expiration
         if (block.timestamp > order.expirationTimestamp) {
             revert OrderExpired();
@@ -115,7 +85,6 @@ contract EthereumRouter is ReentrancyGuard {
         if (order.startTimestamp >= order.expirationTimestamp) {
             revert OrderExpired();
         }
-        return true;
     }
 
     function recoverSigner(IFusionOrder.Order memory order) private pure returns (address) { //added
@@ -164,10 +133,6 @@ contract EthereumRouter is ReentrancyGuard {
         return ecrecover(ethSignedMessageHash, v, r, s);
     }
 
-    function updateOrder(uint256 orderId, uint256 state) private {
-        orders[orderId] = state;
-    }
-
     //Dutch auction implementation
     function getCurrentReturnAmount(uint256 orderId) public view returns (uint256) {
         IFusionOrder.Order memory order = orderDetails[orderId];
@@ -191,40 +156,3 @@ contract EthereumRouter is ReentrancyGuard {
         return order.startReturnAmount - reduction;
     }
 }
-
-
-//     //bridgeStart() to implement with the new order struct (using orderId)
-//     function bridgeStart(uint256 amount, address srcTokenAddress, uint256 orderId) external payable nonReentrant {
-//         address l1GatewayRouterAddress = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6;
-
-//         if (orders[orderId] != 0) {
-//             revert DoubleOrder();
-//         }
-
-//         //receive tokens
-//         IERC20(srcTokenAddress).transferFrom(msg.sender, address(this), amount);
-
-//         //approve token transfer
-//         IERC20(srcTokenAddress).approve(l1GatewayRouterAddress, amount);
-
-//         //get L2 token address
-//         address dstTokenAddress = IL1GatewayRouter(l1GatewayRouterAddress).getL2ERC20Address(srcTokenAddress);
-//         if (dstTokenAddress == address(0)) {
-//             revert tokenNotMapped();
-//         }
-
-//         //send ERC20
-//         IL1GatewayRouter(l1GatewayRouterAddress).depositERC20{value: msg.value}(
-//             srcTokenAddress,
-//             dstTokenAddress,
-//             amount,
-//             200_000,
-//             "0x" // Optional calldata
-//         );
-
-//         //send event notfication
-//         emit BridgeStarted(orderId);
-
-//         updateOrder(orderId, _statePending);
-//     }
-// }
