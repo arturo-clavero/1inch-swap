@@ -14,9 +14,9 @@ contract EthereumRouterScript is Script {
         vm.startBroadcast();
 
         ethereumRouter = new EthereumRouter();
-		
-		console.log("ADDRESS:");
-		console.log(address(ethereumRouter));
+
+        console.log("ADDRESS:");
+        console.log(address(ethereumRouter));
 
         vm.stopBroadcast();
     }
