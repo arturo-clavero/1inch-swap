@@ -1,41 +1,9 @@
 const Redis = require('ioredis');
 const redis = new Redis();
 
-
-async function newOrder(
-	orderId = 0,
-	maker = "0x...",
-	sourceToken = "0x...",
-	sourceAmount = 0,
-	destinationToken = "0x...",
-	minReturnAmount = 0,
-	sourceChainId = 0,
-	destinationChainId = 0,
-	expirationTimestamp = 0,
-	signature = "0x...",
-	exchangeQuote = 0,
-	dutchStartTime = 0
-) {
-	const order = {
-		id: orderId,
-		maker,
-		sourceToken,
-		sourceAmount,
-		destinationToken,
-		minReturnAmount,
-		sourceChainId,
-		destinationChainId,
-		expirationTimestamp,
-		signature,
-		exchangeQuote,
-		dutchStartTime
-	};
-	await storeTempOrder(order, "temporary");
-}
-
-async function storeTempOrder(orderId, orderData) {
-	const key = `unverified:order:${orderId}`;
-	await redis.setex(key, 30, JSON.stringify(orderData)); // 30s TTL
+async function storeTempOrder(order) {
+	const key = `unverified:order:${order.id}`;
+	await redis.setex(key, 30, JSON.stringify(order)); // 30s TTL
 }
 
 async function storeVerifiedOrder(orderId) {
@@ -99,7 +67,7 @@ async function updateOrder(orderId, updates) {
   
   
 module.exports = {
-	newOrder,
+	storeTempOrder,
 	storeVerifiedOrder,
 	removeOrder,
 	updateOrder,
