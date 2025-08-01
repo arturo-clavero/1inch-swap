@@ -26,7 +26,15 @@ export const initiateTrade = async (
 	)
 	console.log("created order");
 	try {
+		console.log("hi");
+
 		const contract = await getContract(oldToken);
+		console.log("hu");
+		console.log("contract:", contract);
+		console.log("contract.interface:", contract?.interface);
+		//console.log(contract.interface.getFunctionNames());
+
+		console.log("hey");
 		const tx = await contract.createOrder(
 			order.oldToken,
 			order.amount,

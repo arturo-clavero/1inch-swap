@@ -40,45 +40,53 @@ export async function createOrder(
 }
 
 async function signOrder(order) {
-	const provider = new ethers.BrowserProvider(window.ethereum); 
+	const provider = new ethers.BrowserProvider(window.ethereum);
 	await provider.send("eth_requestAccounts", []);
 	const signer = await provider.getSigner();
 	const maker = await signer.getAddress();
-
+	const network = await provider.getNetwork();
+	const srcChainId = network.chainId;
 	const types = [
-		"uint256",
-		"address",
-		"address",
-		"uint256",
-		"address",
-		"uint32",
-		"uint32",
-		"uint256",
-		"uint256",
-		"uint256",
-		"uint256"
+		"uint256",   // orderId
+		"address",   // maker
+		"address",   // sourceToken
+		"uint256",   // sourceAmount
+		"address",   // destinationToken
+		"uint32",   // sourceChainId
+		"uint32",   // destinationChainId
+		"uint256",   // startReturnAmount
+		"uint256",   // startTimestamp
+		"uint256",   // minReturnAmount
+		"uint256"    // expirationTimestamp
 	];
-
+	
 	const values = [
-		order.id,
-		maker,
-		order.oldToken,
-		order.amount,
-		order.newToken,
-		order.oldChain,
-		order.newChain,
-		order.amount,
-		order.startTimestamp,
-		order.minReturnAmount,
-		order.expirationTimestamp
+		order.id,                        // orderId
+		maker,                           // maker (wallet address)
+		order.oldToken,                 // sourceToken
+		order.amount,                   // sourceAmount
+		order.newToken,                 // destinationToken
+		srcChainId,                 // sourceChainId
+		order.newChain,                 // destinationChainId
+		order.startReturnAmount,  // startReturnAmount
+		order.startTimestamp,           // startTimestamp
+		order.minReturnAmount,    // minReturnAmount
+		order.expirationTimestamp       // expirationTimestamp
 	];
-
-	const packed = ethers.AbiCoder.defaultAbiCoder().encode(types, values);
-	const messageHash = ethers.keccak256(packed);
-	const signature = await signer.signMessage(ethers.getBytes(messageHash));
+	const packed = ethers.solidityPacked(types, values);
+	const hash = ethers.keccak256(packed);
+	const signatureHexString = await signer.signMessage(ethers.getBytes(hash))
+	console.log(isHexString(signatureHexString));
+	console.log("len: ", signatureHexString.length);
+	const signature = ethers.getBytes(signatureHexString);
+	console.log(isHexString(signature));
+	console.log("len: ", signature.length);
 	return signature;
 }
 
+function isHexString(value) {
+	return typeof value === "string" && /^0x[0-9a-fA-F]+$/.test(value);
+  }
 
 function generate_id(order){
 	const defaultAbiCoder = new ethers.AbiCoder();
