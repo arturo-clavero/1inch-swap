@@ -1,8 +1,9 @@
 const { ethHTLC, scrollHTLC, ethWallet, scrollWallet} = require('./relayer');
-const { Contract, ethers } = require('ethers');
+const { Contract, ethers, keccak256 } = require('ethers');
 
 const RELAYER_ADDRESS = ethWallet.address;
 const pendingSwaps = new Map();
+const hashlockHandled = new Set();
 //relayers locking
 
 const startEventListeners = () => {
@@ -12,11 +13,12 @@ const startEventListeners = () => {
     ethHTLC.on("SwapCreated", async (swapId, sender, receiver, amount, hashlock, timelock) => {  
         console.log("SwapCreated on ETH:", swapId);
             //relaier is receiver
-            if (receiver.toLowerCase() != RELAYER_ADDRESS.toLowerCase()){
-                console.log("Not for relayer");
+            if (hashlockHandled.has(hashlock)){
+                console.log("already existing swap");
                 return;
             }
             console.log(`User ${sender} locked ${ethers.formatEther(amount)} ETH. Lockin on tje scroll...`);
+            hashlockHandled.add(hashlock);
             try{
                 const scrollTime = timelock > 360n ? timelock - 300n : 60n;
                 const txn = await scrollHTLC.createSwap(
@@ -26,16 +28,18 @@ const startEventListeners = () => {
                         {value: amount}
                 );
                 const proof = await txn.wait();
+                const scrollSwapId = proof.logs.find(log => log.fragment?.name === "SwapCreated")?.args?.swapId;
                 console.log(`[SCROLL] relayer locked ${ethers.formatEther(amount)} ETH for ${sender}`);
                 console.log(`Txn: ${proof.hash}`);
-                
                 //to map to track
                 pendingSwaps.set(hashlock.toString(), {
                         path: "eth->scroll",
                         userAddress: sender,
+                        receiver: receiver,
                         amount: amount.toString(),
                         ethSwapId: swapId,
-                        scrollTime: timelock
+                        scrollSwapId: scrollSwapId,
+                        
                 })
             } catch(err){
                 console.error("Failed to lock on scroll",err.message );
@@ -44,12 +48,12 @@ const startEventListeners = () => {
 //scroll-> eth
         scrollHTLC.on("SwapCreated", async (swapId, sender, receiver, amount, hashlock, timelock) => {
             console.log("SwapCreated on SCROLL:", swapId);
-            //relaier is receiver
-            if (receiver.toLowerCase() != RELAYER_ADDRESS.toLowerCase()){
-                console.log("Not for relayer");
+             if (hashlockHandled.has(hashlock)){
+                console.log("already existing swap");
                 return;
             }
             console.log(`User ${sender} locked ${ethers.formatEther(amount)} ETH on the scroll. Lockin on the ethereum...`);
+            hashlockHandled.add(hashlock);
             try{
                 //MIXING avoid
                 const ethTime = timelock > 360n ? timelock - 300n : 60n;
@@ -60,16 +64,18 @@ const startEventListeners = () => {
                         {value: amount}
                 );
                 const proof = await txn.wait();
+                const ethSwapId = proof.logs.find(log => log.fragment?.name === "SwapCreated")?.args?.swapId;
+
                 console.log(`[ETH] relayer locked ${ethers.formatEther(amount)} SCROLL for ${sender}`);
                 console.log(`Txn: ${proof.hash}`);
-                
                 //to map to track
                 pendingSwaps.set(hashlock.toString(), {
                         path: "scroll->eth",
                         userAddress: sender,
+                        receiver: receiver,
                         amount: amount.toString(),
                         scrollSwapId: swapId,
-                        ethTime: timelock
+                        ethSwapId: ethSwapId
                 })
             } catch(err){
                 console.error("Failed to lock on ethereum",err.message );
@@ -80,41 +86,48 @@ const startEventListeners = () => {
         scrollHTLC.on("SwapWithdrawn", async (swapId, secret) => {
             console.log("[SCROLL]SwapWithdrawn:", swapId);
             //relaier is receiver
-            const pending = pendingSwaps.get(swapId.toString());
+            const hashlock = ethers.keccak256(secret);
+            const pending = pendingSwaps.get(hashlock.toString());
+
             if (!pending){
                 console.log("No pending swaps");
                 return;
             }
             try{
-                console.log(`[ETH] Withdrawing and the secret word was ${secret}`);
-                const txn = await ethHTLC.withdraw(pending.ethSwapId, secret);
-                const proof = await txn.wait();
-
-                console.log (`[ETH] the withdraw was successfull, txn is ${proof.hash}`);
-                pendingSwaps.delete(swapId.toString());
+                if (pending.receiver.toLowerCase() === RELAYER_ADDRESS.toLowerCase()){
+                    const txn = await ethHTLC.withdraw(pending.ethSwapId, secret);
+                    await txn.wait();
+                    console.log ("[ETH] side withdrawn with the secret:", secret);
+                    pendingSwaps.delete(swapId.toString());
+                }
+                else ("not relayers job, skipping");
             } catch(err){
                 console.error("[ETH] Withdraw faild",err.message );
             }
         });
 
+
         ethHTLC.on("SwapWithdrawn", async (swapId, secret) => {
             console.log("[ETH]SwapWithdrawn:", swapId);
             //relaier is receiver
-            const pending = pendingSwaps.get(swapId.toString());
+            const hashlock = ethers.keccak256(secret);
+            const pending = pendingSwaps.get(hashlock.toString());
             if (!pending){
                 console.log("No pending swaps");
                 return;
             }
             try{
-                console.log(`[SCROLL] Withdrawing and the secret word was ${secret}`);
-                const txn = await scrollHTLC.withdraw(pending.scrollSwapId, secret);
-                const proof = await txn.wait();
-
-                console.log (`[SCROLL] the withdraw was successfull, txn is ${proof.hash}`);
-                pendingSwaps.delete(swapId.toString());
+                if (pending.receiver.toLowerCase() === RELAYER_ADDRESS.toLowerCase()){
+                    const txn = await scrollHTLC.withdraw(pending.scrollSwapId, secret);
+                    await txn.wait();
+                    console.log(`[SCROLL] Withdrawing and the secret  was ${secret}`);
+                    pendingSwaps.delete(swapId.toString());
+                } else {
+                    console.log("not relayers case. Skipping");
+                }
             } catch(err){
-                console.error("Withdraw faild",err.message );
+                console.error("[SCROLL] Withdraw faild",err.message );
             }
         });
 }
-module.exports = { startEventListeners};
+module.exports = { startEventListeners, pendingSwaps};

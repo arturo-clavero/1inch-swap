@@ -66,14 +66,29 @@ const SwapForm = ({
       const amount = ethers.parseEther("0.00000001");
       const timelock =  Math.floor(Date.now() / 1000) + 60 * 5;
       const txn = await htlcContract.createSwap(
-          relayer_address,
-          // walletAddress, 
+          walletAddress,
           bytesHashlock, 
           timelock,
           { value: amount }
       );
       console.log("Tx sent:", txn.hash);
       await txn.wait();
+      let tryes = 0;
+      const maxTryes = 10;
+      while (tryes < maxTryes){
+        const response = await axios.get(`http://localhost:3000/api/ready/${hash}`);
+        console.log("response is:", response);
+        if (response.data.ready){
+          await withdraw();
+          break;
+        }
+        else{
+          console.log("Relayer still locking, try in the moment");
+          await new Promise(r => setTimeout(r, 2000));
+          tryes++;
+        }
+
+      }
       alert("Swap was simulated successfully");
     } catch (error) {
         console.error("error generating secret", error);
@@ -83,35 +98,30 @@ const SwapForm = ({
     finally{
       setIsSwapping(false);
     }
-
-    const withdraw = async () => {
-      try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signer = await provider.getSigner();
-          let contract;
-            if (oldCurrency.toLowerCase() === "eth") {
-                contract = ethHtlc;
-            } else if ( oldCurrency.toLowerCase() === "scroll"){
-                contract = scrollHtlc;
-            } else {
-                alert('unsupported chain');
-            }
-            const htlcContract = new ethers.Contract(contract, HTLC_abi, signer);
-            const hash = () => localStorage.getItem('hash') || '';
-            const response = await axios.get('http://localhost:3000/api/swap/${hash}');
-            const swapId = response.data.swapId;
-            console.log("the swap Id is ", swapId);
-            const secret = () => localStorage.getItem('secret') || '';
-            const txn = await htlcContract.withdraw(swapId, secret);
-            await txn.await();
-            alert ("Withdraw successful");
-            localStorage.removeItem('secret', secret);
-            localStorage.removeItem('hash', hash);
-         } catch (err){
-            console.error("Withdraw unseccessfull", err);
-            alert ("Withdraw failed: " + err.message);
-         }
-    }
+  }
+  const withdraw = async () => {
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        //define htlc
+        const  contract = oldCurrency.toLowerCase() === "eth" ? ethHtlc : scrollHtlc;
+          const htlcContract = new ethers.Contract(contract, HTLC_abi, signer);
+          //hetting secret hash swapid
+          const hash = localStorage.getItem('hash') || '';
+          const response = await axios.get(`http://localhost:3000/api/swap/${hash}`);
+          const swapId = response.data.swapId;
+          console.log("the swap Id is ", swapId);
+          const secret = localStorage.getItem('secret') || '';
+          console.log("the secret is", secret);
+          const txn = await htlcContract.withdraw(swapId, secret);
+          await txn.wait();
+          alert ("Withdraw successful");
+          localStorage.removeItem('secret', secret);
+          localStorage.removeItem('hash', hash);
+        } catch (err){
+          console.error("Withdraw unseccessfull", err);
+          alert ("Withdraw failed: " + err.message);
+        }
   };
 
   return (
