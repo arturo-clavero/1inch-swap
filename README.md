@@ -36,6 +36,8 @@ A minimal frontend interface to swap ETH for USDC using on-chain price data from
    SCROLL_RPC_URL="https://sepolia-rpc.scroll.io/"
    VITE_ETH_CONTRACT_ADDRESS=0x174c06c59E3C33B8d075330BB09C3Bfe11b7146e
    VITE_SCROLL_CONTRACT_ADDRESS=0xc7c1a51124F7CBD3D244a51046B0dD9FAA3850bA
+   ETH_WC_URL="wss://eth-sepolia.g.alchemy.com/v2/yourAPI"
+   SCROLL_WC_URL="wss://scroll-sepolia.gateway.tenderly.co/yourAPI"
    ```
 
 3. **Start the backend server**:
