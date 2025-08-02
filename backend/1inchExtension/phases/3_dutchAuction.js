@@ -17,22 +17,22 @@ function getDutchPrice(order){
 
 async function dutchAuction(self) {
 	console.log(`[resolver ${self.id} in Auction ...`);
-	const allOrders = await getAllOrders();
-	for (i = 0; i < allOrders.length; i++){
-		if (getDutchPrice(allOrders[i]) > self.minPrice)
-		{
-			const success = await fillOrder(self, allOrders[i]);
-			if (success)
-			{
-				self.order = allOrders[i];
-				removeOrder(allOrders[i]);
-				await self.nextAction();
-				return;
-			}
-		}
-	}
-	self.resolverStep -=1;
-	setupOrderWatcher(self);
+// 	const allOrders = await getAllOrders();
+// 	for (i = 0; i < allOrders.length; i++){
+// 		if (getDutchPrice(allOrders[i]) > self.minPrice)
+// 		{
+// 			const success = await fillOrder(self, allOrders[i]);
+// 			if (success)
+// 			{
+// 				self.order = allOrders[i];
+// 				removeOrder(allOrders[i]);
+// 				await self.nextAction();
+// 				return;
+// 			}
+// 		}
+// 	}
+// 	self.resolverStep -=1;
+// 	setupOrderWatcher(self);
 }
 
 module.exports = {dutchAuction};

@@ -2,26 +2,22 @@ const Redis = require("ioredis");
 const redis = new Redis();
 
 async function setupOrderWatcher(self) {
-	console.log("order watch set up")
+	console.log("order watch set up");
 
 	const sub = redis.duplicate();
-	const channel = '__keyspace@0__:orders';
-  
-	await sub.subscribe(channel);
-	console.log("Watching for LPUSH on 'orders'...");
-  
-	sub.on('message', async (chan, event) => {
-	  if (event === 'lpush') {
-		console.log(`New order detected via LPUSH!`);
-		const order = await redis.lindex('orders', -1);
-		if (order)
-		{
-			console.log('Newest order:', order);
+	await sub.subscribe("orders:verified");
+
+	console.log("Watching for verified orders...");
+
+	sub.on("message", async (channel, orderId) => {
+		console.log("Verified order received:", orderId);
+		const order = await redis.hget("orders:map", orderId);
+		if (order) {
+			console.log("there are orders...");
 			await self.nextAction();
-			return;
 		}
-	}
 	});
 }
+
 
 module.exports = {setupOrderWatcher};
