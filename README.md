@@ -6,13 +6,11 @@ A minimal frontend interface to swap ETH for USDC using on-chain price data from
 ##  Project Tasks
 - [ 🚧LERA ] HTLC smart contracts
 - [ 🚧LERA ] HTLC backend integration
-- [ 🚧 ARTURO] Bridge smart contracts & backend integration
 - [ 🚧 ARTURO] Bridge backend integration
-- [ 🆓 ] Order creation (front end) & call smart contract
-- [ 🆓 ] Order struct on smart contract
-- [ 🆓 ] Order verification function on smart contract
+- [ 🚧 CHAK ] Order creation (front end)
 - [ 🆓 ] Swaps calls from Backend (APIs)
-- [ 🆓 ] Relayer backend logic (requires HTLC, swaps, and bridge finished)
+- [ 🆓 ] Dutch auction (time based lower price for relayers)
+- [ 🆓 ] Relayer backend logic (requires HTLC, bridge, swap and auction finished)
 - [ 🆓 ] Price feeds (connect Chainlink in ./hooks/useQuoteFetcher.js)
 
 
@@ -29,10 +27,13 @@ A minimal frontend interface to swap ETH for USDC using on-chain price data from
 2. **Create a `.env` file**:
 
    ```env
-   PORT=3000
+   PORT=3000   
    ETH_CONTRACT_ADDRESS=0x174c06c59E3C33B8d075330BB09C3Bfe11b7146e
    SCROLL_CONTRACT_ADDRESS=0xc7c1a51124F7CBD3D244a51046B0dD9FAA3850bA
-
+   PRIVATE_KEY=your_wallet_private_key
+   ##for test CHANGE LATER
+   ETH_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/gEJiAZLcZKDjZQBd9LOsS"
+   SCROLL_RPC_URL="https://sepolia-rpc.scroll.io/"
    VITE_ETH_CONTRACT_ADDRESS=0x174c06c59E3C33B8d075330BB09C3Bfe11b7146e
    VITE_SCROLL_CONTRACT_ADDRESS=0xc7c1a51124F7CBD3D244a51046B0dD9FAA3850bA
    ```
@@ -41,6 +42,7 @@ A minimal frontend interface to swap ETH for USDC using on-chain price data from
 
    ```bash
    cd ./backend
+   npm install
    node ./server.js
    ```
 
