@@ -19,7 +19,7 @@ contract EthereumRouter is ReentrancyGuard {
     error InvalidSignatureLength();
 
     // events
-    event OrderCreated(uint256 indexed orderId);
+    event OrderCreated(bytes32 indexed orderId);
 
     address constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -60,7 +60,7 @@ contract EthereumRouter is ReentrancyGuard {
         //store order
         orderDetails[orderId] = order;
 
-        emit OrderCreated(orderId);
+        emit OrderCreated(bytes32(orderId));
     }
 
     function verifyOrder(IFusionOrder.Order memory order) private view {
