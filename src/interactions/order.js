@@ -35,7 +35,7 @@ export async function createOrder(
 	order.id = generate_id(order);
 	order.signature = await signOrder(order)
 	order.secretHash =  await generateSecret(order);
-//	await axios.post('http://localhost:3000/api/storeTempOrder', serializeOrder(order));
+	axios.post('http://localhost:3000/api/storeTempOrder', serializeOrder(order));
 	return order;
 }
 
@@ -43,50 +43,16 @@ async function signOrder(order) {
 	const provider = new ethers.BrowserProvider(window.ethereum);
 	await provider.send("eth_requestAccounts", []);
 	const signer = await provider.getSigner();
-	const maker = await signer.getAddress();
-	const network = await provider.getNetwork();
-	const srcChainId = network.chainId;
-	const types = [
-		"uint256",   // orderId
-		"address",   // maker
-		"address",   // sourceToken
-		"uint256",   // sourceAmount
-		"address",   // destinationToken
-		"uint32",   // sourceChainId
-		"uint32",   // destinationChainId
-		"uint256",   // startReturnAmount
-		"uint256",   // startTimestamp
-		"uint256",   // minReturnAmount
-		"uint256"    // expirationTimestamp
-	];
 	
-	const values = [
-		order.id,                        // orderId
-		maker,                           // maker (wallet address)
-		order.oldToken,                 // sourceToken
-		order.amount,                   // sourceAmount
-		order.newToken,                 // destinationToken
-		srcChainId,                 // sourceChainId
-		order.newChain,                 // destinationChainId
-		order.startReturnAmount,  // startReturnAmount
-		order.startTimestamp,           // startTimestamp
-		order.minReturnAmount,    // minReturnAmount
-		order.expirationTimestamp       // expirationTimestamp
-	];
-	const packed = ethers.solidityPacked(types, values);
-	const hash = ethers.keccak256(packed);
+	const types = ["uint256"];
+	const values = [BigInt(order.id)];
+	const hash = ethers.keccak256(ethers.solidityPacked(types, values));
+
 	const signatureHexString = await signer.signMessage(ethers.getBytes(hash))
-	console.log(isHexString(signatureHexString));
-	console.log("len: ", signatureHexString.length);
 	const signature = ethers.getBytes(signatureHexString);
-	console.log(isHexString(signature));
-	console.log("len: ", signature.length);
+
 	return signature;
 }
-
-function isHexString(value) {
-	return typeof value === "string" && /^0x[0-9a-fA-F]+$/.test(value);
-  }
 
 function generate_id(order){
 	const defaultAbiCoder = new ethers.AbiCoder();

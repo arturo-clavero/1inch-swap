@@ -4,6 +4,7 @@ const redis = new Redis();
 async function storeTempOrder(order) {
 	const key = `unverified:order:${order.id}`;
 	await redis.setex(key, 30, JSON.stringify(order)); // 30s TTL
+	console.log("temporary stored ", key);
 }
 
 async function storeVerifiedOrder(orderId) {
@@ -20,7 +21,7 @@ async function storeVerifiedOrder(orderId) {
 	  .publish("orders:verified", orderId)
 	  .exec();
   
-	console.log("Order stored:", orderId);
+	console.log("Order stored permanently:", orderId);
 }
 
 async function getAllOrders() {

@@ -16,7 +16,9 @@ router.post('/1inchQuote', async (req, res) => {
 });
 
 router.post('/storeTempOrder', async (req) => {
+	console.log("reached backend!")
 	const order = req.body;
+	//console.log("order: ", order);
 	await storeTempOrder(order);
 });
 

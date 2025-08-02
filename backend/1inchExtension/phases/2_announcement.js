@@ -1,13 +1,13 @@
-
+const ethers = require('ethers');
 
 const ContractListener = require('../utils/ContractListener');
 const contracts = require('../utils/contractData');
 const {storeVerifiedOrder} = require('../order');
 
-function announcement(value, sender){
-	console.log("event emited new order: ", value);
-	const id = Number(value);
-	storeVerifiedOrder(id);
+
+async function announcement(orderId){
+	console.log("event emited new order: ",  orderId);
+	await storeVerifiedOrder(orderId);
 }
 
 module.exports =  function listenVerifiedOrder() {

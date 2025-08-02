@@ -13,7 +13,6 @@ export const initiateTrade = async (
 	minReturnAmount = null,
 	maxDuration = null,
 ) => {
-	console.log("hello");
 	const order = await createOrder(
 		oldToken,
 		newToken,
@@ -24,17 +23,9 @@ export const initiateTrade = async (
 		minReturnAmount,
 		maxDuration
 	)
-	console.log("created order");
 	try {
-		console.log("hi");
 
 		const contract = await getContract(oldToken);
-		console.log("hu");
-		console.log("contract:", contract);
-		console.log("contract.interface:", contract?.interface);
-		//console.log(contract.interface.getFunctionNames());
-
-		console.log("hey");
 		const tx = await contract.createOrder(
 			order.oldToken,
 			order.amount,
@@ -45,21 +36,9 @@ export const initiateTrade = async (
 			order.minReturnAmount,
 			order.expirationTimestamp,
 			order.signature,
-			1
+			BigInt(order.id),
 		);
-		//await tx.wait();
-		//DEBUGGING
-		const receipt = await tx.wait();
-		console.log("Transaction hash:", receipt.transactionHash);
-		console.log("Status:", receipt.status); 
-		console.log("Events emitted:");
-		for (const event of receipt.events) {
-		console.log(event.event, event.args);
-		}
-		console.log("logs: ");
-		for (const log of receipt.logs) {
-			console.log(log); // raw log data (topics, data, etc.)
-		}
+		await tx.wait();
 	} catch (err) {
 		console.error("Tx failed:", err);
 	}

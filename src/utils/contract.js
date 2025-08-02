@@ -1,10 +1,10 @@
 import { ethers, BrowserProvider } from "ethers";
-import contractAbiEth from "../../out/EthereumRouter.sol/EthereumRouter.json";
+import contractAbiEth from "../../abi/Eth.json";
 import contractAbiScr from "../../abi/Scr.json";
 
-const contractAddressEth = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-const contractAddressScr = "0xYourDeployedContract";
+const contractAddressEth = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
 
+const contractAddressScr = "0xYourDeployedContract";
 
 export async function getContract(chain = ""){
 	const provider = new BrowserProvider(window.ethereum);
@@ -15,7 +15,6 @@ export async function getContract(chain = ""){
 	{
 		console.log("ETH Contract");
 		return new ethers.Contract(contractAddressEth, contractAbiEth.abi, signer);
-
 	}
 	else
 		return new ethers.Contract(contractAddressScr, contractAbiScr.abi, signer);

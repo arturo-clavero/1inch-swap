@@ -1,7 +1,9 @@
 export const chainMap = {
 	"chainId" : {
-		"ethereum": 1,
-		"ETH": 1,
+		// "ethereum": 1,
+		// "ETH": 1,
+		"ethereum": 31337,
+		"ETH": 31337,
 		"cross-chain": 534351,
 		"SCR": 534351,
 	  },

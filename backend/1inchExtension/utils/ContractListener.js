@@ -12,14 +12,11 @@ class ContractListener {
 
 	start() {
 		this.contract.on(this.eventName, (...args) => {
-		this.eventHandler(...args);
+			this.eventHandler(...args);
 		});
-		console.log(`Listening for event "${this.eventName}"`);
-	}
-	async startAsync() {
-		this.contract.on(this.eventName, async (...args) => {
-			await this.eventHandler(...args);
-		});
+		// this.contract.on("*", (...args) => {
+		// 	console.log("Caught some event:", args);
+		// });
 		console.log(`Listening for event "${this.eventName}"`);
 	}
 
