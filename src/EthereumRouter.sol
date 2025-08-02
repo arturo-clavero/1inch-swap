@@ -9,15 +9,19 @@ import "./interfaces/IFusionOrder.sol";
 contract EthereumRouter is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    error DoubleOrder();
     //errors added
+    error DoubleOrder();
     error InvalidSignature();
     error OrderExpired();
     error InsufficientBalance();
     error InsufficientAllowance();
     error InvalidTimestamp();
+    error InvalidSignatureLength();
 
-    event OrderCreated(uint256 indexed orderId, address indexed maker);
+    // events
+    event OrderCreated(uint256 indexed orderId);
+
+    address constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     mapping(uint256 => uint256) private orders;
     mapping(uint256 => IFusionOrder.Order) private orderDetails; // added
@@ -53,18 +57,15 @@ contract EthereumRouter is ReentrancyGuard {
             signature: signature
         });
 
-        verifyOrder(order);
-
         //store order
         orderDetails[orderId] = order;
 
-        emit OrderCreated(orderId, msg.sender);
+        emit OrderCreated(orderId);
     }
 
     function verifyOrder(IFusionOrder.Order memory order) private view {
-        //added
         //Check for order expiration
-        if (block.timestamp > order.expirationTimestamp) {
+        if (block.timestamp > order.expirationTimestamp || order.startTimestamp >= order.expirationTimestamp) {
             revert OrderExpired();
         }
         //Verify signature
@@ -72,45 +73,33 @@ contract EthereumRouter is ReentrancyGuard {
         if (signer != order.maker) {
             revert InvalidSignature();
         }
-        //check balance
-        if (IERC20(order.sourceToken).balanceOf(order.maker) < order.sourceAmount) {
-            revert InsufficientBalance();
-        }
-        //check allowance
-        if (IERC20(order.sourceToken).allowance(order.maker, address(this)) < order.sourceAmount) {
-            revert InsufficientAllowance();
-        }
-        //check for timestamp
-        if (order.startTimestamp >= order.expirationTimestamp) {
-            revert OrderExpired();
+        //check balance (and allowance if ERC20)
+        if (order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0)) {
+            if (order.maker.balance < order.sourceAmount) {
+                revert InsufficientBalance();
+            }
+        } else {
+            if (IERC20(order.sourceToken).balanceOf(order.maker) < order.sourceAmount) {
+                revert InsufficientBalance();
+            }
+            if (IERC20(order.sourceToken).allowance(order.maker, address(this)) < order.sourceAmount) {
+                revert InsufficientAllowance();
+            }
         }
     }
 
     function recoverSigner(IFusionOrder.Order memory order) private pure returns (address) {
-        //added
         // Create message hash from order parameters
-        bytes32 messageHash = keccak256(
-            abi.encodePacked(
-                order.orderId,
-                order.maker,
-                order.sourceToken,
-                order.sourceAmount,
-                order.destinationToken,
-                order.sourceChainId,
-                order.destinationChainId,
-                order.startReturnAmount,
-                order.startTimestamp,
-                order.minReturnAmount,
-                order.expirationTimestamp
-            )
-        ); //In front end we need to pass the parameters in this exact order
+        bytes32 messageHash = keccak256(abi.encodePacked(order.orderId));
 
         // Convert to Ethereum signed message hash
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 
         // Extract r, s, v from signature
         bytes memory signature = order.signature;
-        require(signature.length == 65, "Invalid signature length");
+        if (signature.length != 65) {
+            revert InvalidSignatureLength();
+        }
 
         bytes32 r;
         bytes32 s;
