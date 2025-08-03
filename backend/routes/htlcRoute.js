@@ -2,6 +2,7 @@ const express = require('express');
 const { generateSecret } = require('../controllers/generate');
 const { fetchQuote } = require('../1inchExtension/utils/fetchQuote');
 const { storeTempOrder } = require('../1inchExtension/order');
+const announcement = require('../1inchExtension/phases/2_announcement');
 
 const router  = express.Router();
 
@@ -21,6 +22,14 @@ router.post('/storeTempOrder', async (req) => {
 	//console.log("order: ", order);
 	await storeTempOrder(order);
 });
+
+router.post('/broadcastVerifiedOrder', async (req, res) => {
+	console.log("reached backend!");
+	console.log("order id:", req.body.id);
+	await announcement(req.body.id);
+	res.sendStatus(200);
+  });
+  
 
 // router.post('/generate', (req, res) =>{
 //     const {hash} = generateSecret();

@@ -2,9 +2,10 @@ import { ethers, BrowserProvider } from "ethers";
 import contractAbiEth from "../../abi/Eth.json";
 import contractAbiScr from "../../abi/Scr.json";
 
-const contractAddressEth = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
-
-const contractAddressScr = "0xYourDeployedContract";
+export const contractAddress = {
+	"ethereum" : "0xC7E8083Aa9248bC25906C2CFa3aF0cAF16ae42E8",
+	"cross-chain" : "0x05B4CB126885fb10464fdD12666FEb25E2563B76"
+} 
 
 export async function getContract(chain = ""){
 	const provider = new BrowserProvider(window.ethereum);
@@ -14,10 +15,10 @@ export async function getContract(chain = ""){
 	if (chain == "ETH")
 	{
 		console.log("ETH Contract");
-		return new ethers.Contract(contractAddressEth, contractAbiEth.abi, signer);
+		return new ethers.Contract(contractAddress["ethereum"], contractAbiEth.abi, signer);
 	}
 	else
-		return new ethers.Contract(contractAddressScr, contractAbiScr.abi, signer);
+		return new ethers.Contract(contractAddress["cross-chain"], contractAbiScr.abi, signer);
 
 }
 

@@ -1,5 +1,6 @@
 const {getAllOrders, removeOrder} = require('../order.js');
 const { setupOrderWatcher } = require('../resolvers/orderWatcher.js');
+const contracts = require('../utils/contractData.js');
 
 function getDutchPrice(order){
 	const now = Math.floor(Date.now() / 1000);
@@ -17,22 +18,42 @@ function getDutchPrice(order){
 
 async function dutchAuction(self) {
 	console.log(`[resolver ${self.id} in Auction ...`);
-// 	const allOrders = await getAllOrders();
-// 	for (i = 0; i < allOrders.length; i++){
-// 		if (getDutchPrice(allOrders[i]) > self.minPrice)
-// 		{
-// 			const success = await fillOrder(self, allOrders[i]);
-// 			if (success)
-// 			{
-// 				self.order = allOrders[i];
-// 				removeOrder(allOrders[i]);
-// 				await self.nextAction();
-// 				return;
-// 			}
-// 		}
-// 	}
-// 	self.resolverStep -=1;
-// 	setupOrderWatcher(self);
+	const allOrders = await getAllOrders();
+	for (i = 0; i < allOrders.length; i++){
+		const order = allOrders[i];
+		if (getDutchPrice(order) > self.minPrice)
+		{
+			const succeess = await attemptToFill(self, order);
+			if (succeess) return;
+		}
+	}
+	self.resolverStep -=1;
+	setupOrderWatcher(self);
 }
 
+async function attemptToFill(self, order){
+	const contract = contracts[order.oldToken];//fill at source contract
+	try {
+		const tx = await contract.fillOrder(
+			BigInt(order.id),
+			self.refillPercentRate == 1 ? true : false,
+			BigInt(self.refillPercentRate * order.startReturnAmount),
+		{
+			gasLimit: 1_000_000  // just for debugging
+		});
+		const receipt = await tx.wait();
+		if (receipt.status === 1) {
+			console.log("Fill-Transaction succeeded");
+			self.order = order;
+			await self.nextAction();
+			return true;
+		} else {
+			console.log("Fill-Transaction failed or reverted");
+		}
+	} catch(error){
+		console.log("ERROR!: ", error);
+		console.log("Fill-Transaction failed or reverted");
+	}
+	return false;
+}
 module.exports = {dutchAuction};

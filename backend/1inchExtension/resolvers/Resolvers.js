@@ -7,7 +7,7 @@ class Resolver {
 	constructor(id, minPrice = 0, refill = 1) {
 		this.id = id;
 		this.minPrice = minPrice;
-		this.refillPercent = refill;
+		this.refillPercentRate = refill;
 		this.resolverActions = [
 			waitForOrders,
 			dutchAuction,

@@ -5,30 +5,22 @@ const { WebSocketProvider, Contract, Wallet } = require('ethers');
 // const providerSCR = new WebSocketProvider(process.env.RPC_WS_SCROLL);
 
 //providers for DEVELOPMENT 
-const providerAnvil = new WebSocketProvider(process.env.RPC_WS_ANVIL);
-// const providerPublicTestnet = new WebSocketProvider(process.env.RPC_WS_PUBLIC_TESTNET);
+const providerAnvilETH = new WebSocketProvider(process.env.RPC_WS_ANVIL_ETH);
+const providerAnvilSRC = new WebSocketProvider(process.env.RPC_WS_ANVIL_SRC);
 
-
-//add your contract data here and get contract by importing contracts and getting it by name
 const contractData = [
-	// {
-	// 	name: "test",
-	// 	address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-	// 	abi: require('./abi/Test.json'),
-	// 	provider: providerAnvil,
-	// },
-	// {
-	// 	name: "router",
-	// 	address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-	// 	abi: require('../../../abi/fake.json'),
-	// 	provider: providerAnvil,
-	// },
 	{
 		name: "ETH",
-		address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+		address: "0xC7E8083Aa9248bC25906C2CFa3aF0cAF16ae42E8",
 		abi: require('../../../abi/Eth.json').abi,
-		provider: providerAnvil,
+		provider: providerAnvilETH,
 	},
+	{
+		name: "SCR",
+		address: "0x05B4CB126885fb10464fdD12666FEb25E2563B76",
+		abi: require('../../../abi/Scr.json').abi,
+		provider: providerAnvilSRC,
+	}
 ];
 
 const pKey = process.env.WALLET_PRIVATE_KEY;

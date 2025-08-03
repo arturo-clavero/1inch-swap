@@ -11,6 +11,7 @@ export const chainMap = {
 		"ETH": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
 		"SCR": "0x4200000000000000000000000000000000000006",
 		"USDC": "0xA0b86991c6218b36c1d19d4a2e9eb0cE3606eB48",
+		"ERC20" : "0xEe701D654e6654F7576b4a36E22746cA64DadCF0",
 	  },
 	  "decimals": {
 		"ETH": 18,

@@ -10,20 +10,4 @@ async function announcement(orderId){
 	await storeVerifiedOrder(orderId);
 }
 
-module.exports =  function listenVerifiedOrder() {
-	const listenerETH = new ContractListener(
-		contracts["ETH"],
-		"OrderCreated",
-		announcement
-	);
-	listenerETH.start();
-
-	//TODO!!!
-	
-	// const listenerSCR = new ContractListener(
-	// 	contracts["SCR"],
-	// 	"OrderVerified",
-	// 	announcement
-	// );
-	// listenerSCR.start();
-}
+module.exports =  announcement

@@ -14,9 +14,6 @@ class ContractListener {
 		this.contract.on(this.eventName, (...args) => {
 			this.eventHandler(...args);
 		});
-		// this.contract.on("*", (...args) => {
-		// 	console.log("Caught some event:", args);
-		// });
 		console.log(`Listening for event "${this.eventName}"`);
 	}
 
@@ -32,32 +29,12 @@ class ContractListener {
 				{
 					this.contract.off(this.eventName, listener); // remove listener after first call
 					resolve(args);
-
 				}
-				
 			};
 			this.contract.on(this.eventName, listener);
 			launchEvent();
 		});
 	}
-	
-// 	async wait(condition = ()=> {}) {
-// 		console.log("hello?", this.eventName);
-// 		return new Promise((resolve) => {
-// 			this.contract.on(this.eventName, (...args)=> {
-// 				//console.log("args ", args);
-// 				//this.contract.off(this.eventName);
-// 				resolve();
-// 			});
-// 			// const listener = (...args) => {
-// 			// 	if (condition(args)){
-// 			// 		this.contract.off(this.eventName, listener);
-// 			// 		resolve({ args });
-// 			// 	}
-// 			// };
-// 			// this.contract.on(this.eventName, listener);
-// 		});
-// 	}
 }
 
 module.exports = ContractListener;

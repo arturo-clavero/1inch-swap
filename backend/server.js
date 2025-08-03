@@ -29,7 +29,4 @@ app.listen(port, () => {
 	.then(() => console.log('resolvers started and waiting for orders'))
 	.catch(console.error);
 
-    // Start listening for orders
-    require('./1inchExtension/phases/2_announcement')();
-
 });

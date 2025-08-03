@@ -40,7 +40,7 @@ async function getAllOrders() {
   
 async function removeOrder(orderId) {
 	const rawOrder = await redis.hget("orders:map", orderId);
-	if (!rawOrder) return console.log("Already taken or not found");
+	if (!rawOrder) return false;
   
 	await redis.multi()
 	  .hdel("orders:map", orderId)
@@ -49,6 +49,7 @@ async function removeOrder(orderId) {
 	  .exec();
   
 	console.log("Order taken:", orderId);
+	return true;
 }
 
 async function updateOrder(orderId, updates) {
