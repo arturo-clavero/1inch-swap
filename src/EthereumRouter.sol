@@ -40,19 +40,15 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         endpoint = ILayerZeroEndpoint(_endpoint);
     }
 
-	 modifier existingOrder(uint256 orderId) {
-        require(
-            orderDetails[orderId].maker != address(0),
-            "Order deoesn't exist"
-        );
+    modifier existingOrder(uint256 orderId) {
+        require(orderDetails[orderId].maker != address(0), "Order deoesn't exist");
         _;
     }
 
     modifier nonExpiredOrder(uint256 orderId) {
         IFusionOrder.Order memory order = orderDetails[orderId];
         require(
-            block.timestamp <= order.expirationTimestamp &&
-            order.startTimestamp < order.expirationTimestamp,
+            block.timestamp <= order.expirationTimestamp && order.startTimestamp < order.expirationTimestamp,
             "Order expired or invalid timestamps"
         );
         _;
@@ -90,26 +86,26 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
             alreadyFilled: false
         });
 
-		orderDetails[orderId] = order;
+        orderDetails[orderId] = order;
 
-		verifyOrder(order);
+        verifyOrder(order);
 
         emit OrderCreated(bytes32(orderId));
     }
 
     function verifyOrder(IFusionOrder.Order memory order) private view {
-        // IFusionOrder.Order memory order = orderDetails[orderId];
-		//order expired
-		if (block.timestamp > order.expirationTimestamp || order.startTimestamp > order.expirationTimestamp)
-		 revert("Order expired or invalid timestamps");
-				// OrderExpired();
+        //order expired
+        if (block.timestamp > order.expirationTimestamp || order.startTimestamp > order.expirationTimestamp) {
+            revert OrderExpired();
+        }
 
-		//signature
-  		bytes32 messageHash = keccak256(abi.encodePacked(order.orderId));
+        //signature
+        bytes32 messageHash = keccak256(abi.encodePacked(order.orderId));
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
         bytes memory signature = order.signature;
-		require(signature.length == 65, "invalid length"); //revert InvalidSignatureLength();
-        // if (signature.length != 65) revert InvalidSignatureLength();
+        if (signature.length != 65) {
+            revert InvalidSignatureLength();
+        }
         bytes32 r;
         bytes32 s;
         uint8 v;
@@ -120,20 +116,22 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         }
         if (v < 27) v += 27;
         address signer = ecrecover(ethSignedMessageHash, v, r, s);
-		require(signer == order.maker, "ivalid sign");
-        // if (signer != order.maker) revert("Invalid signature");
-		//revert InvalidSignature();
+        if (signer != order.maker) {
+            revert InvalidSignature();
+        }
 
+        //check deposit or check allowance
         if (order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0)) {
-			require(msg.value == order.sourceAmount, "Incorrect ETH sent");
-
-            // For native tokens: check msg.value handled elsewhere (e.g. lockNativeFunds)
-            // So no check here because native tokens must be sent upfront
+            if (msg.value < order.sourceAmount) {
+                revert InsufficientBalance();
+            }
         } else {
-            if (IERC20(order.destinationToken).balanceOf(order.maker) < order.sourceAmount) revert("insufficeietn balance");
-			// revert InsufficientBalance();
-            if (IERC20(order.destinationToken).allowance(order.maker, address(this)) < order.sourceAmount) revert("Insufficient alllowance");
-			//revert InsufficientAllowance();
+            if (IERC20(order.destinationToken).balanceOf(order.maker) < order.sourceAmount) {
+                revert InsufficientBalance();
+            }
+            if (IERC20(order.destinationToken).allowance(order.maker, address(this)) < order.sourceAmount) {
+                revert InsufficientAllowance();
+            }
         }
     }
 
@@ -162,7 +160,13 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         emit LockedEscrow(msg.sender, msg.value, address(this));
     }
 
-    function fillOrder(uint256 orderId, bool isFull, uint256 requestedAmount) external payable existingOrder(orderId) nonExpiredOrder(orderId) nonReentrant {
+    function fillOrder(uint256 orderId, bool isFull, uint256 requestedAmount)
+        external
+        payable
+        existingOrder(orderId)
+        nonExpiredOrder(orderId)
+        nonReentrant
+    {
         IFusionOrder.Order storage order = orderDetails[orderId];
 
         if (order.alreadyFilled) revert OrderAlreadyFilled();
@@ -173,7 +177,9 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
 
         // Check taker's balance and allowance for destinationToken
         if (IERC20(order.destinationToken).balanceOf(msg.sender) < takerAmount) revert InsufficientBalance();
-        if (IERC20(order.destinationToken).allowance(msg.sender, address(this)) < takerAmount) revert InsufficientAllowance();
+        if (IERC20(order.destinationToken).allowance(msg.sender, address(this)) < takerAmount) {
+            revert InsufficientAllowance();
+        }
 
         // Lock maker's tokens (native or ERC20)
         if (order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0)) {
@@ -201,38 +207,30 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         emit LockedEscrow(msg.sender, takerAmount, order.maker);
 
         // Prepare cross-chain message payload and send
-		//test!
+        //test!
         // bytes memory payload = abi.encode(orderId, takerAmount, order.maker, msg.sender);
         // sendMsg(order.destinationChainId, destinationAddress, payload);
     }
 
-	 function setDestinationContract(address destination) external {
+    function setDestinationContract(address destination) external {
         destinationAddress = abi.encodePacked(destination);
     }
 
-
     function sendMsg(uint32 _dstChainId, bytes memory _destination, bytes memory _payload) private {
         endpoint.send{value: msg.value}(
-            _dstChainId,
-            _destination,
-            _payload,
-            payable(msg.sender),
-            address(this),
-            bytes("")
+            _dstChainId, _destination, _payload, payable(msg.sender), address(this), bytes("")
         );
     }
 
-   
     // LayerZero receive function
-    function lzReceive(
-        uint16 _srcChainId,
-        bytes memory _from,
-        uint64 _nonce,
-        bytes memory _payload
-    ) external override {
+    function lzReceive(uint16 _srcChainId, bytes memory _from, uint64 _nonce, bytes memory _payload)
+        external
+        override
+    {
         require(msg.sender == address(endpoint), "Caller not endpoint");
 
-        (uint256 orderId, uint256 takerAmount, address maker, address taker) = abi.decode(_payload, (uint256, uint256, address, address));
+        (uint256 orderId, uint256 takerAmount, address maker, address taker) =
+            abi.decode(_payload, (uint256, uint256, address, address));
 
         // TODO: Call escrow contract or release funds on destination chain
         // e.g., escrowContract.releaseFunds(orderId, takerAmount, taker);

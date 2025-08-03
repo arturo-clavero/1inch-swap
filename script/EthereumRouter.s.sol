@@ -9,17 +9,17 @@ import "forge-std/console.sol";
 
 contract EthereumRouterScript is Script {
     EthereumRouter public ethereumRouter;
-	MockLayerZeroEndpoint public ethereumMockEndpoint;
+    MockLayerZeroEndpoint public ethereumMockEndpoint;
 
     function setUp() public {
-		vm.startBroadcast();
+        vm.startBroadcast();
 
         ethereumMockEndpoint = new MockLayerZeroEndpoint(31337);
-		console.log("ADDRESS MOCKENDPOINT:");
+        console.log("ADDRESS MOCKENDPOINT:");
         console.log(address(ethereumMockEndpoint));
 
         vm.stopBroadcast();
-	}
+    }
 
     function run() public {
         vm.startBroadcast();

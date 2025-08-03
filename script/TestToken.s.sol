@@ -8,8 +8,7 @@ import "forge-std/console.sol";
 contract TestTokenScript is Script {
     TestToken public testToken;
 
-    function setUp() public {
-	}
+    function setUp() public {}
 
     function run() public {
         vm.startBroadcast();

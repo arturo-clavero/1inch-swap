@@ -18,20 +18,11 @@ contract MockLayerZeroEndpoint {
         remotes[_dstChainId] = _remoteEndpoint;
     }
 
-    function send(
-        uint16 _dstChainId,
-        bytes calldata _destination,
-        bytes calldata _payload
-    ) external {
+    function send(uint16 _dstChainId, bytes calldata _destination, bytes calldata _payload) external {
         address dstEndpoint = remotes[_dstChainId];
         require(dstEndpoint != address(0), "No remote set");
 
         address dstApp = abi.decode(_destination, (address));
-        ILayerZeroReceiver(dstApp).lzReceive(
-            chainId,
-            abi.encode(msg.sender),
-            0,
-            _payload
-        );
+        ILayerZeroReceiver(dstApp).lzReceive(chainId, abi.encode(msg.sender), 0, _payload);
     }
 }
