@@ -1,4 +1,4 @@
-//const contracts = require("../../contracts/contractData");
+//const {contracts, signer} = require("../../contracts/contractData");
 
 async function deposit(self) {
 	console.log(`[resolver ${self.id}] deposit in escrows`);

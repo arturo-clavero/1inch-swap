@@ -2,6 +2,9 @@ import { ethers , parseUnits} from "ethers";
 import { chainMap } from '../utils/chainMap';
 import axios from 'axios';
 import { contractAddress } from "../utils/contract";
+import ERC20_ABI from "../../abi/ERC20";
+
+export const MAX_REFILLS = 6;
 
 const orderSecrets = {};
 
@@ -35,6 +38,7 @@ export async function createOrder(
 		startTimestamp: startTimestamp,
 		minReturnAmount: parseUnits(`${minReturnAmount}`, chainMap["decimals"][newToken]),
 		expirationTimestamp: expirationTimestamp,
+		minRefills: null,
 		signature: null,
 		secretHash: null,
 		id : null,
@@ -45,8 +49,10 @@ export async function createOrder(
 	const { secret, secretHash } = await generateSecret();
 	orderSecrets[order.id] = secret;//what to do with the secret????!!!!!!!
 	order.secretHash = secretHash;
-
-	axios.post('http://localhost:3000/api/storeTempOrder', serializeOrder(order));
+	order.minRefills = 	order.startReturnAmount / BigInt(MAX_REFILLS);
+	const ser = serializeOrder(order);
+	console.log("just before");
+	axios.post('http://localhost:3000/api/storeTempOrder', ser);
 	return order;
 }
 
@@ -72,14 +78,7 @@ async function signOrder(order) {
 
 async function allowTransfer(order, signer) {
 	if (order.oldToken == "ETH")
-		return; //only for ERC20 tokens
-	const ERC20_ABI = [
-		"function approve(address spender, uint256 amount) external returns (bool)",
-		"function allowance(address owner, address spender) external view returns (uint256)",
-		"function balanceOf(address owner) view returns (uint256)",
-		"function transfer(address to, uint amount) returns (bool)",
-		"function decimals() view returns (uint8)"
-	  ];	  
+		return; //only for ERC20 tokens	  
 	const token = new ethers.Contract(order.oldTokenAddress, ERC20_ABI, signer);
 	const user = await signer.getAddress();
 	const thisContractAddress = contractAddress[order.oldChain];

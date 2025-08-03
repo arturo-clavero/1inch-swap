@@ -1,6 +1,8 @@
 const {getAllOrders, removeOrder} = require('../order.js');
 const { setupOrderWatcher } = require('../resolvers/orderWatcher.js');
-const contracts = require('../utils/contractData.js');
+const { WebSocketProvider, Contract, Wallet } = require('ethers');
+const {contracts, providers, address} = require('../utils/contractData.js');
+const ERC20_ABI = require('../../../abi/ERC20.json');
 
 function getDutchPrice(order){
 	const now = Math.floor(Date.now() / 1000);
@@ -32,13 +34,22 @@ async function dutchAuction(self) {
 }
 
 async function attemptToFill(self, order){
-	const contract = contracts[order.oldToken];//fill at source contract
+	const takerAmount = self.refillPercentRate * order.startReturnAmount
+	const contract = contracts[order.oldChain];
+	if (order.newToken != "ETH"){
+		console.log("verifying token ...");
+		// const signer = new Wallet(process.env.WALLET_PRIVATE_KEY, providers[order.newChain]);
+		// const token = new Contract(order.newTokenAddress, ERC20_ABI, signer);
+		// await token.approve(address[order.oldChain], takerAmount);
+	}
 	try {
+		console.log("going to order...");
 		const tx = await contract.fillOrder(
 			BigInt(order.id),
 			self.refillPercentRate == 1 ? true : false,
-			BigInt(self.refillPercentRate * order.startReturnAmount),
+			BigInt(takerAmount),
 		{
+			value: order.newToken == "ETH" ? takerAmount : 0,
 			gasLimit: 1_000_000  // just for debugging
 		});
 		const receipt = await tx.wait();

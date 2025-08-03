@@ -1,8 +1,18 @@
 import { getContract } from '../utils/contract';
-import {createOrder} from './order';
-import { ethers , parseUnits} from "ethers";
+import {createOrder, MAX_REFILLS} from './order';
+import { hexlify} from "ethers";
 import { chainMap } from '../utils/chainMap';
 import axios from 'axios';
+
+function toHexString(input) {
+	if (typeof input === "string" && input.startsWith("0x")) {
+		return input;
+	}
+	if (input?.type === "Buffer" && Array.isArray(input.data)) {
+		return hexlify(Uint8Array.from(input.data));
+	}
+	return hexlify(input);
+}
 
 export const initiateTrade = async (
 	oldToken,
@@ -14,7 +24,7 @@ export const initiateTrade = async (
 	minReturnAmount = null,
 	maxDuration = null,
 ) => {
-	oldToken = "ERC20";//test erc20!
+	//oldToken = "ERC20";//test erc20!
 	const order = await createOrder(
 		oldToken,
 		newToken,
@@ -26,21 +36,23 @@ export const initiateTrade = async (
 		maxDuration
 	)
 	try {
-		const contract = await getContract(oldToken);//calling source contract
+		const contract = await getContract(oldChain);//calling source contract
 		const tx = await contract.createOrder(
 			order.oldTokenAddress,
-			order.totalAmount,
+			BigInt(order.totalAmount),
 			order.newTokenAddress,
 			order.newChainId,
-			order.startReturnAmount,
-			order.startTimestamp,
-			order.minReturnAmount,
-			order.expirationTimestamp,
-			order.signature,
-			order.secretHash,
+			BigInt(order.startReturnAmount),
+			BigInt(order.minReturnAmount),
+			BigInt(order.minRefills),
+			BigInt(order.startTimestamp),
+			BigInt(order.expirationTimestamp),
+			toHexString(order.signature),
+			toHexString(order.secretHash),
 			BigInt(order.id),
 			{
-				value: oldToken == "ETH" ? order.totalAmount : 0n,
+				value: order.oldToken === "ETH" ? BigInt(order.totalAmount) : 0n,
+				gasLimit: 1000000
 			}
 		);
 		const receipt = await tx.wait();

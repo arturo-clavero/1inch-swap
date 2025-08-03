@@ -11,8 +11,11 @@ router.get('/', (req, res) =>{
 });
 
 router.post('/1inchQuote', async (req, res) => {
+	console.log("hello?");
 	const {srcTokenAddress, dstTokenAddress, amount } = req.body;
-	const quote = await fetchQuote(srcTokenAddress, dstTokenAddress, amount);
+	console.log("fetchin quote...");
+	//const quote = await fetchQuote(srcTokenAddress, dstTokenAddress, amount);
+	const quote  = 5;
 	res.json({quote})
 });
 

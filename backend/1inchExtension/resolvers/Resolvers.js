@@ -1,5 +1,5 @@
 const { waitForOrders } = require('../phases/1_waitForOrders');
-const { dutchAuction } = require('../phases/3_dutchAuction');
+const { dutchAuction } = require('../phases/3_fillOrder');
 const { deposit } = require('../phases/4_deposit');
 const { withdraw } = require('../phases/5_withdraw');
 

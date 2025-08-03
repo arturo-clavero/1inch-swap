@@ -8,7 +8,6 @@ async function oneInchQuote(srcToken, amount, dstToken) {
 	const dstDecimals = chainMap.decimals[dstToken];
 
 	const baseAmount = BigInt(Math.floor(amount * 10 ** srcDecimals));
-
 	try {
 		const response = await axios.post('http://localhost:3000/api/1inchQuote', {
 			srcTokenAddress: chainMap.token[srcToken],
@@ -45,6 +44,7 @@ export const fetchQuote = async (oldToken, amount, newToken) => {
 			"0x26f6F7C468EE309115d19Aa2055db5A74F8cE7A5"
 		);
 		console.log("1 SCR in USDC: ", unitCrossChainInStableCoin);
+		console.log(newToken, oldToken);
 		if (newToken == "ETH"){
 			let totalCrossChainInStableCoin = unitCrossChainInStableCoin * amount;
 			conversionResult = await oneInchQuote("USDC", totalCrossChainInStableCoin, newToken);

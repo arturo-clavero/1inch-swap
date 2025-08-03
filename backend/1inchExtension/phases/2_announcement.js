@@ -1,7 +1,7 @@
 const ethers = require('ethers');
 
-const ContractListener = require('../utils/ContractListener');
-const contracts = require('../utils/contractData');
+// const ContractListener = require('../utils/ContractListener');
+// const {contracts, signer} = require('../utils/contractData');
 const {storeVerifiedOrder} = require('../order');
 
 

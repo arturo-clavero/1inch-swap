@@ -5,21 +5,27 @@ const { WebSocketProvider, Contract, Wallet } = require('ethers');
 // const providerSCR = new WebSocketProvider(process.env.RPC_WS_SCROLL);
 
 //providers for DEVELOPMENT 
-const providerAnvilETH = new WebSocketProvider(process.env.RPC_WS_ANVIL_ETH);
-const providerAnvilSRC = new WebSocketProvider(process.env.RPC_WS_ANVIL_SRC);
+const providers = {
+	"ethereum" : new WebSocketProvider(process.env.RPC_WS_ANVIL_ETH),
+	"cross-chain" : new WebSocketProvider(process.env.RPC_WS_ANVIL_SRC),
+}
 
+const address = {
+"ethereum" : "0xdEc4A424361e7Ae374A527571166085Dc4bDCd0c",
+	"cross-chain" : "0x05B4CB126885fb10464fdD12666FEb25E2563B76",
+}
 const contractData = [
 	{
 		name: "ETH",
-		address: "0xC7E8083Aa9248bC25906C2CFa3aF0cAF16ae42E8",
+		address: address["ethereum"],
 		abi: require('../../../abi/Eth.json').abi,
-		provider: providerAnvilETH,
+		provider: providers["ethereum"],
 	},
 	{
 		name: "SCR",
-		address: "0x05B4CB126885fb10464fdD12666FEb25E2563B76",
+		address: address["cross-chain"],
 		abi: require('../../../abi/Scr.json').abi,
-		provider: providerAnvilSRC,
+		provider: providers["cross-chain"],
 	}
 ];
 
@@ -32,6 +38,6 @@ for (const { name, address, abi, provider } of contractData) {
 	contracts[name] = new Contract(address, abi, provider).connect(signer);
 }
 
-module.exports = contracts;
+module.exports = {contracts, providers, address};
 //import contracts 
 //use contracts[name]
