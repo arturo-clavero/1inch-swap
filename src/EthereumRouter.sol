@@ -60,26 +60,31 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         address destinationToken,
         uint32 destinationChainId,
         uint256 startReturnAmount,
-        uint256 startTimestamp,
         uint256 minReturnAmount,
+        uint256 minRefill,
+        uint256 startTimestamp,
         uint256 expirationTimestamp,
         bytes calldata signature,
         bytes calldata secretHash,
         uint256 orderId
     ) external payable nonReentrant {
-        //if (orderDetails[orderId].maker != address(0)) revert DoubleOrder();
+        // if (orderDetails[orderId].maker != address(0))
+        // 	revert DoubleOrder();
+       require(orderDetails[orderId].maker == address(0), "DoubleOrder: order already exists");
 
         IFusionOrder.Order memory order = IFusionOrder.Order({
             orderId: orderId,
             maker: msg.sender,
             sourceToken: sourceToken,
-            sourceAmount: sourceAmount,
+            initialSourceAmount: sourceAmount,
+            currentSourceAmount: sourceAmount,
             destinationToken: destinationToken,
             sourceChainId: uint32(block.chainid),
             destinationChainId: destinationChainId,
             startReturnAmount: startReturnAmount,
-            startTimestamp: startTimestamp,
             minReturnAmount: minReturnAmount,
+            minRefill: minRefill,
+            startTimestamp: startTimestamp,
             expirationTimestamp: expirationTimestamp,
             signature: signature,
             secretHash: secretHash,
@@ -88,24 +93,27 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
 
         orderDetails[orderId] = order;
 
-        verifyOrder(order);
+        //verifyOrder(order);
 
         emit OrderCreated(bytes32(orderId));
     }
 
     function verifyOrder(IFusionOrder.Order memory order) private view {
         //order expired
-        if (block.timestamp > order.expirationTimestamp || order.startTimestamp > order.expirationTimestamp) {
-            revert OrderExpired();
-        }
+        // if (block.timestamp > order.expirationTimestamp || order.startTimestamp > order.expirationTimestamp) {
+        //     revert OrderExpired();
+        // }
+        require(block.timestamp <= order.expirationTimestamp, "OrderExpired: expired");
+        require(order.startTimestamp <= order.expirationTimestamp, "OrderExpired: invalid timestamps");
 
         //signature
         bytes32 messageHash = keccak256(abi.encodePacked(order.orderId));
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
         bytes memory signature = order.signature;
-        if (signature.length != 65) {
-            revert InvalidSignatureLength();
-        }
+        // if (signature.length != 65) {
+        //     revert InvalidSignatureLength();
+        // }
+        require(order.signature.length == 65, "InvalidSignatureLength");
         bytes32 r;
         bytes32 s;
         uint8 v;
@@ -119,19 +127,33 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         if (signer != order.maker) {
             revert InvalidSignature();
         }
+        require(signer == order.maker, "InvalidSignature: signer mismatch");
 
-        //check deposit or check allowance
+        // //check deposit or check allowance for MAKER
+        // // if (order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0)) {
+        // //     if (msg.value < order.initialSourceAmount) {
+        // //         revert InsufficientBalance();
+        // //     }
+        // // } else {
+        // //     if (IERC20(order.destinationToken).balanceOf(order.maker) < order.initialSourceAmount) {
+        // //         revert InsufficientBalance();
+        // //     }
+        // //     if (IERC20(order.destinationToken).allowance(order.maker, address(this)) < order.initialSourceAmount) {
+        // //         revert InsufficientAllowance();
+        // //     }
+        // // }
         if (order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0)) {
-            if (msg.value < order.sourceAmount) {
-                revert InsufficientBalance();
-            }
-        } else {
-            if (IERC20(order.destinationToken).balanceOf(order.maker) < order.sourceAmount) {
-                revert InsufficientBalance();
-            }
-            if (IERC20(order.destinationToken).allowance(order.maker, address(this)) < order.sourceAmount) {
-                revert InsufficientAllowance();
-            }
+            require(msg.value >= order.initialSourceAmount, "InsufficientBalance: not enough ETH sent");
+        } 
+		else {
+            require(
+                IERC20(order.destinationToken).balanceOf(order.maker) >= order.initialSourceAmount,
+                "InsufficientBalance: token balance too low"
+            );
+            require(
+                IERC20(order.destinationToken).allowance(order.maker, address(this)) >= order.initialSourceAmount,
+                "InsufficientAllowance"
+            );
         }
     }
 
@@ -149,18 +171,7 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
         return order.startReturnAmount - reduction;
     }
 
-    // Maker must lock native tokens upfront by sending ETH to this payable function if sourceToken is native
-    function lockNativeFunds(uint256 orderId) external payable {
-        IFusionOrder.Order storage order = orderDetails[orderId];
-        require(msg.sender == order.maker, "Only maker can lock native funds");
-        require(order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0), "Not native token");
-        require(msg.value == order.sourceAmount, "Incorrect amount sent");
-        // Store native escrow amount here (e.g., mapping (address => mapping(uint256 => uint256)) nativeEscrow;)
-        // For simplicity, assume your contract's balance holds ETH escrow
-        emit LockedEscrow(msg.sender, msg.value, address(this));
-    }
-
-    function fillOrder(uint256 orderId, bool isFull, uint256 requestedAmount)
+    function fillOrder(uint256 orderId, bool isFillFull, uint256 refillAmount)
         external
         payable
         existingOrder(orderId)
@@ -169,47 +180,59 @@ contract EthereumRouter is ReentrancyGuard, LayerZeroReceiver {
     {
         IFusionOrder.Order storage order = orderDetails[orderId];
 
-        if (order.alreadyFilled) revert OrderAlreadyFilled();
-        if (!isFull && requestedAmount == 0) revert InvalidRequestedAmount();
+        //basic requirements:
+        require(order.currentSourceAmount > 0, "order already filled");
+        //if (order.alreadyFilled) revert OrderAlreadyFilled();
+        require(isFillFull == true || (refillAmount >= order.minRefill), "invaild requested fill");
+        // if (!isFull && requestedAmount < order.minRefill) revert InvalidRequestedAmount();
 
+        // get amount to be paid by taker
         uint256 totalAmount = getCurrentReturnAmount(orderId);
-        uint256 takerAmount = (isFull || requestedAmount >= totalAmount) ? totalAmount : requestedAmount;
-
-        // Check taker's balance and allowance for destinationToken
-        if (IERC20(order.destinationToken).balanceOf(msg.sender) < takerAmount) revert InsufficientBalance();
-        if (IERC20(order.destinationToken).allowance(msg.sender, address(this)) < takerAmount) {
-            revert InsufficientAllowance();
+        uint256 takerAmount;
+        uint256 makerAmount;
+        if (isFillFull == true || refillAmount > totalAmount) {
+            takerAmount = totalAmount;
+            makerAmount = order.currentSourceAmount;
+        } else {
+            takerAmount = refillAmount;
+            makerAmount = order.initialSourceAmount * (refillAmount / totalAmount);
         }
 
-        // Lock maker's tokens (native or ERC20)
-        if (order.sourceToken == NATIVE_TOKEN || order.sourceToken == address(0)) {
-            // For native tokens: require that maker previously locked funds via lockNativeFunds
-            // TODO: Check contract balance or bookkeeping if you want to track per order
-            // This example assumes funds are already in the contract
+        // Check TAKER'S balance and allowance for destinationToken
+        if (order.destinationToken != NATIVE_TOKEN) {
+            require(IERC20(order.destinationToken).balanceOf(msg.sender) >= takerAmount, "insufficeint balance");
+            // if (IERC20(order.destinationToken).balanceOf(msg.sender) < takerAmount) {
+            // 	revert InsufficientBalance();
+            // }
+            require(
+                IERC20(order.destinationToken).allowance(msg.sender, address(this)) < takerAmount,
+                "insufficeint balance"
+            );
+
+            // if (IERC20(order.destinationToken).allowance(msg.sender, address(this)) < takerAmount) {
+            // 	revert InsufficientAllowance();
+            // }
         } else {
-            // Pull ERC20 tokens from maker
-            IERC20(order.sourceToken).safeTransferFrom(order.maker, address(this), takerAmount);
+            require(msg.value >= takerAmount, "not enough native balance");
+            // if (msg.value < totalAmount)
+            // 	revert InsufficientBalance();
         }
 
         // Update order amounts
-        if (takerAmount == totalAmount) {
-            order.alreadyFilled = true;
-        } else {
-            order.startReturnAmount -= takerAmount;
-            if (takerAmount > order.minReturnAmount) {
-                order.minReturnAmount = 0;
-            } else {
-                order.minReturnAmount -= takerAmount;
-            }
+        order.currentSourceAmount -= makerAmount;
+        if (order.currentSourceAmount > 0) {
             emit OrderRefill(bytes32(orderId), takerAmount);
         }
 
         emit LockedEscrow(msg.sender, takerAmount, order.maker);
 
-        // Prepare cross-chain message payload and send
-        //test!
+        // Lock takers tokens in dst:
+        // we need to transfer the takers money, do we transfer to the sendmsg? or transfer after arriving for cheaper?
         // bytes memory payload = abi.encode(orderId, takerAmount, order.maker, msg.sender);
         // sendMsg(order.destinationChainId, destinationAddress, payload);
+
+        // Lock makers tokens in src:
+        //call another smartcontract.deposit(){value: order.sourceAmount};
     }
 
     function setDestinationContract(address destination) external {
