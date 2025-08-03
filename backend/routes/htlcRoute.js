@@ -2,7 +2,7 @@ const express = require('express');
 const { pendingSwaps } = require('../controllers/relayerListeners'); 
 const { Contract, ethers } = require('ethers');
 const router  = express.Router();
-
+const fetchQuote = require('../controllers/fetchQuote');
 router.get('/', (req, res) =>{
     res.send('this is bacjend');
 });
@@ -31,6 +31,13 @@ router.get('/swap/:hashlock', (req, res) =>{
 })
 router.post('/refund', (req, res) =>{
     res.send('timelock expired')
+});
+
+router.post('/1inchQuote', async (req, res) => {
+	const {srcTokenAddress, dstTokenAddress, amount } = req.body;
+	console.log("fetchin quote...");
+	const quote = await fetchQuote(srcTokenAddress, dstTokenAddress, amount);
+	res.json({quote})
 });
 
 module.exports = router;

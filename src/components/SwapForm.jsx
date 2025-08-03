@@ -18,24 +18,28 @@ const SwapForm = ({
 //------ Price use effect ------//
 
   useEffect(() => {
-    if (connected && amount && Number(amount) > 0) {
-      setIsLoading(true);
-      fetchQuote(oldCurrency, amount, newCurrency, walletAddress)
-      .then((price) => {
-        setConvertedPrice(price);
-      })
-      .catch(() => {
-        setConvertedPrice(null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-    } else {
-      setConvertedPrice(null);
-      setIsLoading(false);
-    }
+	if (connected && amount && Number(amount) > 0) {
+		setIsLoading(true);
+
+		async function fetchPrice() {
+			try {
+				const price = await fetchQuote(oldCurrency, amount, newCurrency);
+				setConvertedPrice(price);
+			} catch (error) {
+				console.error("Fetch quote error:", error);
+				setConvertedPrice(null);
+			} finally {
+				setIsLoading(false);
+			}
+		}
+		fetchPrice();
+	} 
+	else {
+		setConvertedPrice(null);
+		setIsLoading(false);
+	}
     
-  }, [connected, amount, oldCurrency, newCurrency, walletAddress]);
+  }, [connected, amount, oldCurrency, newCurrency]);
 
 
 //------ States ------//
@@ -52,7 +56,7 @@ const SwapForm = ({
 
   //------ Lock funds user side ------//
   const handleSwap = async () => {
-    if (isSwapping || isLocking) return ;
+    if (isLoading || isSwapping || isLocking) return ;
     try {
       setIsSwapping(true);
       const {hash, secret } = generateSecret();
