@@ -15,5 +15,7 @@ interface IFusionOrder {
         uint256 minReturnAmount;
         uint256 expirationTimestamp;
         bytes signature;
+		bytes secretHash;
+		bool alreadyFilled;
     }
 }
