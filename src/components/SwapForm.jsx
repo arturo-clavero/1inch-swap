@@ -3,7 +3,7 @@ import { fetchQuote } from '../hooks/useQuoteFetcher';
 import HTLC_abi from "../../abi/HTLC.json";
 import { ethers, Contract } from "ethers";
 import axios from "axios";
-import { generateSecret } from './Handling';
+import { generateSecret } from './secretGeneration';
 
 const ethHtlc = import.meta.env.VITE_ETH_CONTRACT_ADDRESS;
 const scrollHtlc = import.meta.env.VITE_SCROLL_CONTRACT_ADDRESS;
