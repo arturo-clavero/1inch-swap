@@ -1,43 +1,35 @@
 const express = require('express');
-const { pendingSwaps } = require('../controllers/relayerListeners'); 
-const { Contract, ethers } = require('ethers');
-const router  = express.Router();
-const fetchQuote = require('../controllers/fetchQuote');
-router.get('/', (req, res) =>{
+const { pendingSwapsByHashlock } = require('../controllers/relayerListeners');
+const htlcRouter = express.Router();
+
+htlcRouter.get('/', (req, res) => {
     res.send('this is bacjend');
 });
-router.get('/ready/:hashlock', (req, res) =>{
+htlcRouter.get('/ready/:hashlock', (req, res) => {
     const hashlock = req.params.hashlock;
     console.log("the hashlock is ", req.params.hashlock)
-    const pending = pendingSwaps.get(hashlock);
-    if(pending && pending.ethSwapId && pending.scrollSwapId) {
-        return res.json({ready: true});
+    const pendingSwap = pendingSwapsByHashlock.get(hashlock);
+    if (pendingSwap && pendingSwap.ethSwapId && pendingSwap.scrollSwapId) {
+        return res.json({ ready: true });
     }
     else {
-        return res.json({ready: false});
+        return res.json({ ready: false });
     }
 });
-router.get('/swap/:hashlock', (req, res) =>{
+htlcRouter.get('/swap/:hashlock', (req, res) => {
     const hashlock = req.params.hashlock;
     console.log("the hashlock is ", req.params.hashlock)
-    console.log("swapinside:", pendingSwaps);
-    const swapData = pendingSwaps.get(hashlock);
-    if(!swapData) {
-        return res.status(404).json({error: "swap was not found"});
+    console.log("swapinside:", pendingSwapsByHashlock);
+    const swapRecord = pendingSwapsByHashlock.get(hashlock);
+    if (!swapRecord) {
+        return res.status(404).json({ error: "swap was not found" });
     }
     return res.json({
-        swapId: swapData.ethSwapId || swapData.scrollSwapId
+        swapId: swapRecord.ethSwapId || swapRecord.scrollSwapId
     })
 })
-router.post('/refund', (req, res) =>{
+htlcRouter.post('/refund', (req, res) => {
     res.send('timelock expired')
 });
 
-router.post('/1inchQuote', async (req, res) => {
-	const {srcTokenAddress, dstTokenAddress, amount } = req.body;
-	console.log("fetchin quote...");
-	const quote = await fetchQuote(srcTokenAddress, dstTokenAddress, amount);
-	res.json({quote})
-});
-
-module.exports = router;
+module.exports = htlcRouter;
